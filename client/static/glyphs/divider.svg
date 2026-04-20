@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 24" fill="currentColor" aria-hidden="true">
+  <!-- Left rule -->
+  <rect x="0" y="11" width="240" height="2"/>
+  <!-- Skull glyph, center -->
+  <g transform="translate(300 12)">
+    <!-- Cranium -->
+    <path d="M-10 -8 a10 10 0 1 1 20 0 v4 a4 4 0 0 1 -4 4 h-2 v2 h-2 v-2 h-4 v2 h-2 v-2 h-2 a4 4 0 0 1 -4 -4 z"/>
+    <!-- Eye sockets -->
+    <circle cx="-4.5" cy="-6" r="2.2" fill="var(--bg, #EFE3C8)"/>
+    <circle cx="4.5" cy="-6" r="2.2" fill="var(--bg, #EFE3C8)"/>
+    <!-- Nasal -->
+    <path d="M-1 -2 l1 -2 l1 2 l-1 2 z" fill="var(--bg, #EFE3C8)"/>
+  </g>
+  <!-- Right rule -->
+  <rect x="360" y="11" width="240" height="2"/>
+</svg>

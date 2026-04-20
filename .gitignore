@@ -1,0 +1,34 @@
+node_modules/
+dist/
+build/
+.svelte-kit/
+*.tsbuildinfo
+
+# Runtime state / backups
+data/
+backups/
+
+# Generated at predev/prebuild — see /client/scripts/sync-shared.mjs
+client/src/lib/shared/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code local-only settings (project-wide ./claude/settings.json is
+# fine to commit; .local.json carries per-user permission grants).
+.claude/settings.local.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

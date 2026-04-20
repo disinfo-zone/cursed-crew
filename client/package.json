@@ -1,0 +1,32 @@
+{
+  "name": "cursed-crew-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cursed Crew — SvelteKit client (static build)",
+  "scripts": {
+    "sync-shared": "node scripts/sync-shared.mjs",
+    "predev": "npm run sync-shared",
+    "prebuild": "npm run sync-shared",
+    "precheck": "npm run sync-shared",
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "node scripts/run-tests.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.8",
+    "@sveltejs/kit": "^2.15.1",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@types/node": "^22.10.5",
+    "svelte": "^5.16.0",
+    "svelte-check": "^4.1.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

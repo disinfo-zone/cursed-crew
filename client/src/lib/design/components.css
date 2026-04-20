@@ -1,0 +1,266 @@
+/*
+ * Shared component treatments. Kept deliberately small — per-module Svelte
+ * components may add their own scoped styles, but these classes are the
+ * vocabulary everything reaches for.
+ *
+ * Rules (from design-doc §6):
+ *  - 0 border-radius anywhere
+ *  - No drop shadows, no gradients
+ *  - Thick flat borders, not Material elevation
+ *  - Primary action = blood fill, bone text
+ */
+
+/* ------------------------------ buttons ----------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: var(--s-3) var(--s-5);
+  border: var(--stroke-heavy) solid var(--ink-line);
+  background: var(--bg-dim);
+  color: var(--fg);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 80ms linear, color 80ms linear;
+  border-radius: 0;
+  user-select: none;
+}
+
+.btn:hover {
+  background: var(--bg-deep);
+}
+
+.btn:focus-visible {
+  outline: var(--ring) solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--c-bone);
+  border-color: var(--accent);
+}
+.btn-primary:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--fg-dim);
+  color: var(--fg-dim);
+}
+.btn-ghost:hover {
+  background: var(--bg-dim);
+  color: var(--fg);
+}
+
+/* ------------------------------ inputs ------------------------------------ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.field > label,
+.field-label {
+  font-family: var(--font-head);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--fg-dim);
+}
+
+.input,
+.textarea {
+  min-height: var(--tap-min);
+  padding: var(--s-2) var(--s-3);
+  border: var(--stroke) solid var(--ink-line);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  border-radius: 0;
+  outline: none;
+  width: 100%;
+}
+
+.textarea {
+  min-height: calc(var(--tap-min) * 2.5);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.input:focus,
+.textarea:focus,
+.input:focus-visible,
+.textarea:focus-visible {
+  border-color: var(--accent);
+  outline: var(--ring) solid var(--accent);
+  outline-offset: -1px;
+}
+
+.input-inline {
+  min-height: auto;
+  padding: var(--s-1) 0;
+  border: 0;
+  border-bottom: var(--stroke) solid var(--ink-line);
+  background: transparent;
+}
+
+/* ------------------------------ status tags ------------------------------- */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 2px var(--s-2);
+  font-family: var(--font-head);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--c-bone);
+  background: var(--fg-dim);
+  border: var(--stroke-thin) solid var(--fg);
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.tag[data-status='allied']   { background: var(--c-status-allied); }
+.tag[data-status='friendly'] { background: var(--c-status-friendly); }
+.tag[data-status='neutral']  { background: var(--c-status-neutral); }
+.tag[data-status='watched']  { background: var(--c-status-watched); }
+.tag[data-status='wanted']   { background: var(--c-status-wanted); }
+.tag[data-status='kos']      { background: var(--c-status-kos); }
+
+/* ------------------------------ panels ------------------------------------ */
+
+.panel {
+  background: var(--bg-dim);
+  border: var(--stroke-heavy) solid var(--ink-line);
+  padding: var(--s-5);
+  position: relative;
+}
+
+.panel > .panel-head {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) var(--s-4);
+  padding: var(--s-2) var(--s-5);
+  background: var(--fg);
+  color: var(--bg);
+  letter-spacing: 0.03em;
+}
+
+/* ------------------------------ number steppers --------------------------- */
+/* Stepper visuals are owned by /components/Stepper.svelte. Nothing global. */
+
+/* ------------------------------ wax-seal presence tag --------------------- */
+
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  height: 3.25rem;
+  padding: 0 var(--s-3);
+  background: var(--accent);
+  color: var(--c-bone);
+  border: var(--stroke) solid var(--accent-dark);
+  font-family: var(--font-head);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  /* Rough hexagonal-ish wax-seal shape: use clip-path to cut the corners. */
+  clip-path: polygon(
+    0 10%, 10% 0, 90% 0, 100% 10%,
+    100% 90%, 90% 100%, 10% 100%, 0 90%
+  );
+}
+
+/* ------------------------------ ornamental divider ------------------------ */
+
+.rule {
+  display: block;
+  border: 0;
+  width: 100%;
+  height: 24px;
+  margin: var(--s-6) 0;
+  background-image: url('/glyphs/divider.svg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.7;
+}
+
+/* ------------------------------ connection banner ------------------------- */
+
+.adrift {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: var(--s-2) var(--s-4);
+  background: var(--accent);
+  color: var(--c-bone);
+  font-family: var(--font-head);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: center;
+  border-bottom: var(--stroke) solid var(--accent-dark);
+}
+
+/* ------------------------------ toast ------------------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: var(--s-6);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--s-3) var(--s-5);
+  background: var(--fg);
+  color: var(--bg);
+  border: var(--stroke-heavy) solid var(--accent-dark);
+  font-family: var(--font-head);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* ------------------------------ utilities --------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tilt-left  { transform: rotate(-0.6deg); }
+.tilt-right { transform: rotate(0.6deg); }
+
+.stack-sm  { display: flex; flex-direction: column; gap: var(--s-3); }
+.stack     { display: flex; flex-direction: column; gap: var(--s-5); }
+.stack-lg  { display: flex; flex-direction: column; gap: var(--s-8); }
+.row       { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }

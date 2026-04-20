@@ -1,0 +1,104 @@
+/*
+ * Self-hosted fonts (§6.3). All files are OFL-licensed and sit in
+ * /static/fonts/. `font-display: swap` lets the app render in the fallback
+ * stack while the display face loads — important on cold cellular loads.
+ */
+
+@font-face {
+  font-family: 'Pirata One';
+  src: url('/fonts/PirataOne-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant Unicase';
+  src: url('/fonts/CormorantUnicase-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('/fonts/ImFellEnglish-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('/fonts/ImFellEnglish-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Special Elite';
+  src: url('/fonts/SpecialElite-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Reset display-type hierarchy to use the design stacks. Sizes come in
+   components.css and per-component styles — this file only sets families and
+   baseline weights. */
+
+html {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  text-transform: uppercase;
+}
+
+h3 {
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+p {
+  margin: 0 0 var(--s-3);
+}
+
+code, .num, .stat {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* Link styling is spartan — underline, blood on hover. */
+a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-thickness: var(--stroke-thin);
+  text-underline-offset: 0.2em;
+}
+a:hover {
+  color: var(--accent-bright);
+}

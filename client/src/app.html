@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="A shared ledger for doomed scoundrels playing Pirate Borg." />
+    <meta name="theme-color" content="#0A0A0A" />
+    <title>Cursed Crew</title>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <script>
+      // Apply the user's saved theme before CSS paints to avoid a flash of the
+      // wrong treatment. Default (no data-theme attribute) follows the OS.
+      try {
+        var t = localStorage.getItem('cc.theme');
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (_) {}
+    </script>
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

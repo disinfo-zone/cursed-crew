@@ -1,0 +1,27 @@
+services:
+  cursedcrew:
+    build: .
+    image: cursedcrew:latest
+    container_name: cursedcrew
+    restart: unless-stopped
+    # Bind to loopback only — Cloudflare Tunnel (cloudflared) is the public
+    # entrypoint; the service itself should not be reachable on the LAN.
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: "8080"
+      DB_PATH: "/data/cursedcrew.db"
+      CLIENT_DIR: "/app/client"
+      NODE_ENV: "production"
+      # Cloudflare terminates TLS; trust the X-Forwarded-* headers so
+      # req.secure works inside Express.
+      TRUST_PROXY: "1"
+      COOKIE_SECURE: "1"
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('node:http').get('http://127.0.0.1:8080/healthz', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
