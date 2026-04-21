@@ -8,6 +8,10 @@ build/
 data/
 backups/
 
+# Host-specific compose overrides (port bindings, UID mappings, etc.)
+docker-compose.override.yml
+docker-compose.override.yaml
+
 # Generated at predev/prebuild — see /client/scripts/sync-shared.mjs
 client/src/lib/shared/
 
