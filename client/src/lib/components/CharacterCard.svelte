@@ -545,6 +545,7 @@
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
     background-repeat: no-repeat;
     background-position: right var(--s-2) center;
+    background-size: 12px 8px;
     padding-right: var(--s-6);
     outline: none;
   }
