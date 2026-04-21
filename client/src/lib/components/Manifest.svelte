@@ -4,6 +4,7 @@
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   }
   import Stepper from './Stepper.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
 
 
   type Props = {
@@ -19,6 +20,17 @@
   let doubloonDraft = $state(0);
   let doubloonRef: HTMLInputElement | null = $state(null);
 
+  // Confirmation modal state
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
+  }
+
   function setDoubloons(n: number) {
     dispatch({ kind: 'doubloons.set', value: Math.max(0, Math.min(999999, n)) });
   }
@@ -27,6 +39,9 @@
   }
   function removeCargo(id: string) {
     dispatch({ kind: 'cargo.remove', id });
+  }
+  function confirmRemoveCargo(id: string) {
+    askConfirm('Remove cargo?', 'This cargo will be lost to the sea.', () => removeCargo(id));
   }
   function addCargo() {
     dispatch({
@@ -40,6 +55,9 @@
   }
   function removeRelic(id: string) {
     dispatch({ kind: 'relic.remove', id });
+  }
+  function confirmRemoveRelic(id: string) {
+    askConfirm('Remove relic?', 'This relic will be cast into the deep.', () => removeRelic(id));
   }
   function addRelic() {
     dispatch({
@@ -137,7 +155,7 @@
             type="button"
             class="cargo-remove"
             aria-label="Remove cargo"
-            onclick={() => removeCargo(c.id)}
+            onclick={() => confirmRemoveCargo(c.id)}
             disabled={!allowEdit}
           >×</button>
         </div>
@@ -183,7 +201,7 @@
             type="button"
             class="relic-remove"
             aria-label="Remove relic"
-            onclick={() => removeRelic(r.id)}
+            onclick={() => confirmRemoveRelic(r.id)}
             disabled={!allowEdit}
           >×</button>
         </div>
@@ -229,6 +247,14 @@
       </div>
     {/each}
   </div>
+
+  <ConfirmModal
+    open={confirm.open}
+    title={confirm.title}
+    message={confirm.message}
+    onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+    onCancel={closeConfirm}
+  />
 </section>
 
 <style>
@@ -292,7 +318,7 @@
     outline: none;
   }
 
-  .cargo-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); margin-bottom:var(--s-5); }
+  .cargo-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); margin-bottom:var(--s-5); overflow:hidden; }
   @media (min-width: 640px) { .cargo-grid { grid-template-columns:repeat(2,1fr); } }
   @media (min-width: 1024px) { .cargo-grid { grid-template-columns:repeat(3,1fr); } }
 
@@ -303,6 +329,10 @@
   }
   .cargo-card:nth-child(odd) { transform: rotate(-0.25deg); }
   .cargo-card:nth-child(even) { transform: rotate(0.15deg); }
+  @media (max-width: 639px) {
+    .cargo-card:nth-child(odd),
+    .cargo-card:nth-child(even) { transform: none; }
+  }
   .cargo-top { display:flex; align-items:center; gap:var(--s-2); margin-bottom:var(--s-3); }
   .cargo-name { flex:1; font-family:var(--font-body); font-size:1rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-1) var(--s-2); outline:none; color:var(--fg); min-width:0; }
   .cargo-name:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
@@ -313,7 +343,7 @@
   .cargo-notes { width:100%; font-family:var(--font-body); font-size:0.9rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-2); outline:none; color:var(--fg); resize:vertical; margin-top:var(--s-2); }
   .cargo-notes:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
 
-  .relic-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); }
+  .relic-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); overflow:hidden; }
   @media (min-width: 640px) { .relic-grid { grid-template-columns:repeat(2,1fr); } }
 
   .relic-card {
@@ -323,6 +353,10 @@
   }
   .relic-card:nth-child(odd) { transform: rotate(0.2deg); }
   .relic-card:nth-child(even) { transform: rotate(-0.3deg); }
+  @media (max-width: 639px) {
+    .relic-card:nth-child(odd),
+    .relic-card:nth-child(even) { transform: none; }
+  }
   /* Accent bar on the left only — reads as a rule, not a box */
   .relic-card::before {
     content: '';

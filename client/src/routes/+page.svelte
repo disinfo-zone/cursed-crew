@@ -198,7 +198,7 @@
           <p class="err" role="alert">{rejoinError}</p>
         {/if}
 
-        <button class="btn" type="submit">Step Aboard</button>
+        <button class="btn btn-primary" type="submit">Step Aboard</button>
       </form>
 
       {#if loading}

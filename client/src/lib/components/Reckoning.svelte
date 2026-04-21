@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CrewSession } from '$lib/ws-session.svelte';
   import type { Faction, FactionStatus } from '$lib/shared/types';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   type Props = { session: CrewSession };
   let { session }: Props = $props();
@@ -58,6 +59,16 @@
   }
 
   let newFactionName = $state('');
+
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
+  }
   function addFaction() {
     const name = newFactionName.trim();
     if (!name) return;
@@ -100,7 +111,7 @@
               type="button"
               class="row-remove"
               aria-label="Remove faction {f.name}"
-              onclick={() => session.dispatch({ kind: 'faction.remove', id: f.id })}
+              onclick={() => askConfirm('Remove faction?', `Remove ${f.name} from the ledger?`, () => session.dispatch({ kind: 'faction.remove', id: f.id }))}
             >×</button>
           </div>
 
@@ -133,6 +144,14 @@
     />
     <button type="button" class="btn" onclick={addFaction} disabled={newFactionName.trim() === ''}>Write them in</button>
   </div>
+
+  <ConfirmModal
+    open={confirm.open}
+    title={confirm.title}
+    message={confirm.message}
+    onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+    onCancel={closeConfirm}
+  />
 </section>
 
 <style>

@@ -2,6 +2,7 @@
   import type { CrewSession } from '$lib/ws-session.svelte';
   import type { LogEntry } from '$lib/shared/types';
   import { renderMarkdownLite, todayIsoDate } from '$lib/markdownLite';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   type Props = { session: CrewSession };
   let { session }: Props = $props();
@@ -26,6 +27,16 @@
   let newTitle = $state('');
   let newBody = $state('');
   let newAuthor = $state('');
+
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
+  }
 
   // Keep the session field auto-tracking nextSession unless the user has
   // explicitly changed it. (Simple heuristic: if newSession matches the
@@ -100,6 +111,9 @@
   function removeEntry(id: string) {
     session.dispatch({ kind: 'log.remove', id });
     if (editingId === id) editingId = null;
+  }
+  function confirmRemoveEntry(id: string) {
+    askConfirm('Strike from the record?', 'This log entry will be lost forever.', () => removeEntry(id));
   }
 </script>
 
@@ -200,7 +214,7 @@
               {/if}
               <div class="entry-actions">
                 <button type="button" class="entry-action" onclick={() => beginEdit(entry)}>edit</button>
-                <button type="button" class="entry-action danger" onclick={() => removeEntry(entry.id)}>remove</button>
+                <button type="button" class="entry-action danger" onclick={() => confirmRemoveEntry(entry.id)}>remove</button>
               </div>
             </header>
             {#if entry.body}
@@ -222,6 +236,14 @@
   {:else}
     <p class="muted empty">Nothing logged yet. The paper waits.</p>
   {/if}
+
+  <ConfirmModal
+    open={confirm.open}
+    title={confirm.title}
+    message={confirm.message}
+    onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+    onCancel={closeConfirm}
+  />
 </section>
 
 <style>

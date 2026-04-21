@@ -4,14 +4,14 @@ const { chromium } = require('playwright');
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.goto('http://localhost:8080/c/starving-barnacle-keg');
-  await page.waitForTimeout(500);
-  // Force dark mode
+  await page.waitForTimeout(2000);
+  await page.fill('input[placeholder="One-Eye"]', 'Test Scallywag');
+  await page.click('button:has-text("Step Aboard")');
+  await page.waitForTimeout(4000);
   await page.evaluate(() => {
     document.documentElement.setAttribute('data-theme', 'dark');
   });
-  await page.fill('input[placeholder="One-Eye"]', 'Test Scallywag');
-  await page.click('button:has-text("Step Aboard")');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(500);
   await page.screenshot({ path: '../screenshot-ledger-dark.png', fullPage: true });
   await browser.close();
 })();

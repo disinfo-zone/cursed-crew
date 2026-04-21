@@ -2,6 +2,7 @@
   import type { CrewSession } from '$lib/ws-session.svelte';
   import type { Bounty } from '$lib/shared/types';
   import { toasts } from '$lib/toasts.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   type Props = { session: CrewSession };
   let { session }: Props = $props();
@@ -18,6 +19,16 @@
 
   // New bounty form
   let target = $state('');
+
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
+  }
   let amount = $state<number | ''>('' as number | '');
   let issuer = $state('');
   let reason = $state('');
@@ -70,6 +81,9 @@
   function remove(id: string) {
     session.dispatch({ kind: 'bounty.remove', id });
     toasts.push('Struck from the warrants.', 'grim');
+  }
+  function confirmRemove(id: string, target: string) {
+    askConfirm('Tear up the warrant?', `Remove the bounty on ${target || 'this target'}?`, () => remove(id));
   }
 </script>
 
@@ -177,7 +191,7 @@
           <div class="bc-foot">
             <button type="button" class="btn btn-ghost small" onclick={() => resolve(b.id, 'paid')}>Paid off</button>
             <button type="button" class="btn btn-ghost small" onclick={() => resolve(b.id, 'cleared')}>Cleared</button>
-            <button type="button" class="btn btn-ghost small danger" onclick={() => remove(b.id)}>Remove</button>
+            <button type="button" class="btn btn-ghost small danger" onclick={() => confirmRemove(b.id, b.target)}>Remove</button>
           </div>
         </li>
       {/each}
@@ -217,13 +231,21 @@
               </div>
             {/if}
             <div class="bc-foot">
-              <button type="button" class="btn btn-ghost small danger" onclick={() => remove(b.id)}>Remove</button>
+              <button type="button" class="btn btn-ghost small danger" onclick={() => confirmRemove(b.id, b.target)}>Remove</button>
             </div>
           </li>
         {/each}
       </ul>
     {/if}
   {/if}
+
+  <ConfirmModal
+    open={confirm.open}
+    title={confirm.title}
+    message={confirm.message}
+    onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+    onCancel={closeConfirm}
+  />
 </section>
 
 <style>

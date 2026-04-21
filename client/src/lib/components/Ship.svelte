@@ -2,6 +2,7 @@
   import type { CrewSession } from '$lib/ws-session.svelte';
   import type { HullTier, Ship } from '$lib/shared/types';
   import Stepper from './Stepper.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
 
   type Props = { session: CrewSession };
   let { session }: Props = $props();
@@ -81,6 +82,16 @@
   }
 
   const dieFormat = (n: number) => `d${n}`;
+
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
+  }
 </script>
 
 {#if ship}
@@ -337,7 +348,7 @@
                 type="button"
                 class="upgrade-remove"
                 aria-label="Remove upgrade {u}"
-                onclick={() => session.dispatch({ kind: 'ship.removeUpgrade', index: i })}
+                onclick={() => askConfirm('Remove upgrade?', `The upgrade "${u}" will be struck from the log.`, () => session.dispatch({ kind: 'ship.removeUpgrade', index: i }))}
               >×</button>
             </li>
           {/each}
@@ -371,7 +382,7 @@
                 type="button"
                 class="upgrade-remove"
                 aria-label="Remove shanty {s}"
-                onclick={() => session.dispatch({ kind: 'ship.removeShanty', index: i })}
+                onclick={() => askConfirm('Remove shanty?', `The shanty "${s}" will be forgotten.`, () => session.dispatch({ kind: 'ship.removeShanty', index: i }))}
               >×</button>
             </li>
           {/each}
@@ -405,6 +416,14 @@
         placeholder="What the hull remembers, what the sails have seen…"
       ></textarea>
     </div>
+
+    <ConfirmModal
+      open={confirm.open}
+      title={confirm.title}
+      message={confirm.message}
+      onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+      onCancel={closeConfirm}
+    />
   </section>
 {/if}
 
@@ -481,12 +500,14 @@
   /* ─── Stat grid ─────────────────────────────────────────────────────── */
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: var(--s-5) var(--s-4);
     margin-top: var(--s-5);
     align-items: start;
+    overflow: hidden;
   }
-  @media (min-width: 720px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 640px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
 
   .stat-block {
     display: flex;

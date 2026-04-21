@@ -2,6 +2,7 @@
   import type { Character, InventoryItem } from '$lib/shared/types';
   import type { CrewSession } from '$lib/ws-session.svelte';
   import { toasts } from '$lib/toasts.svelte';
+  import ConfirmModal from './ConfirmModal.svelte';
   import Stepper from './Stepper.svelte';
 
   type Props = {
@@ -108,7 +109,7 @@
   }
 
   // ─── Death / revive ──────────────────────────────────────────────────
-  function confirmDeath() {
+  function doDeath() {
     session.dispatch({ kind: 'character.die', id: character.id });
     toasts.push('To Davy Jones\' locker with ye.', 'grim');
   }
@@ -116,8 +117,18 @@
     session.dispatch({ kind: 'character.revive', id: character.id });
     toasts.push('The dead walk again.', 'info');
   }
-  function permanentRemove() {
+  function doPermanentRemove() {
     session.dispatch({ kind: 'character.remove', id: character.id });
+  }
+
+  let confirm = $state<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false, title: '', message: '', onConfirm: () => {}
+  });
+  function askConfirm(title: string, message: string, onConfirm: () => void) {
+    confirm = { open: true, title, message, onConfirm };
+  }
+  function closeConfirm() {
+    confirm = { ...confirm, open: false };
   }
 </script>
 
@@ -427,14 +438,22 @@
     <footer class="card-foot">
       {#if deceased}
         <button type="button" class="btn btn-ghost" onclick={revive}>Revive</button>
-        <button type="button" class="btn btn-ghost remove" onclick={permanentRemove}>
+        <button type="button" class="btn btn-ghost remove" onclick={() => askConfirm('Cast overboard?', `${character.name || 'This character'} will be lost forever.`, doPermanentRemove)}>
           Cast overboard
         </button>
       {:else}
-        <button type="button" class="btn btn-ghost" onclick={confirmDeath}>Mark dead</button>
+        <button type="button" class="btn btn-ghost" onclick={() => askConfirm('Mark dead?', `${character.name || 'This character'} will be moved to Davy Jones' Locker.`, doDeath)}>Mark dead</button>
       {/if}
     </footer>
   {/if}
+
+  <ConfirmModal
+    open={confirm.open}
+    title={confirm.title}
+    message={confirm.message}
+    onConfirm={() => { confirm.onConfirm(); closeConfirm(); }}
+    onCancel={closeConfirm}
+  />
 </article>
 
 <style>
@@ -445,6 +464,9 @@
     flex-direction: column;
     gap: var(--s-3);
     min-width: 0;  /* allow shrinking inside grid */
+  }
+  @media (max-width: 639px) {
+    .card { border-bottom: var(--stroke) solid var(--ink-line); }
   }
   .card.dead { opacity: 0.75; background: var(--bg-deep); }
   .card.dead .name-input,
@@ -484,15 +506,19 @@
     text-shadow: 0.5px 0 0 color-mix(in oklab, var(--accent) 30%, transparent);
   }
   .collapse-btn {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     background: transparent;
     border: 0;
     color: var(--fg-dim);
     font-family: var(--font-mono);
+    font-size: 1.25rem;
     cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: background 80ms linear, color 80ms linear;
   }
-  .collapse-btn:hover { color: var(--fg); }
+  .collapse-btn:hover { color: var(--fg); background: color-mix(in oklab, var(--fg) 6%, transparent); }
 
   .meta-row {
     display: flex;
