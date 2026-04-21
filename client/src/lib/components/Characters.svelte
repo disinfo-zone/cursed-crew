@@ -32,18 +32,15 @@
     session.dispatch({ kind: 'character.create', id: crypto.randomUUID() });
   }
 
-  function tiltFor(index: number): 'left' | 'right' | 'none' {
-    return index % 2 === 0 ? 'left' : 'right';
-  }
+  /* Rotation is now computed per-card from character id for a "piled papers" feel */
 </script>
 
 <section class="panel crew" aria-labelledby="crew-h">
-  <div class="head-row">
-    <h2 id="crew-h" class="panel-head">The Crew</h2>
-    <div class="head-actions">
-      <button type="button" class="head-btn" onclick={collapseAll}>collapse all</button>
-      <button type="button" class="head-btn" onclick={expandAll}>expand all</button>
-    </div>
+  <h2 id="crew-h" class="panel-head">The Crew</h2>
+
+  <div class="crew-actions">
+    <button type="button" class="head-btn" onclick={collapseAll}>collapse all</button>
+    <button type="button" class="head-btn" onclick={expandAll}>expand all</button>
   </div>
 
   <div class="grid">
@@ -52,7 +49,7 @@
         {session}
         character={c}
         deceased={false}
-        tilt={tiltFor(i)}
+
         collapsed={!!collapsed[c.id]}
         onToggleCollapsed={() => toggleCollapsed(c.id)}
       />
@@ -85,18 +82,24 @@
 </section>
 
 <style>
-  .head-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s-3);
-    margin-bottom: var(--s-5);
-    flex-wrap: wrap;
+  .crew {
+    position: relative;
   }
-  .head-actions {
+  .crew-actions {
+    position: absolute;
+    top: var(--s-2);
+    right: var(--s-5);
     display: inline-flex;
     gap: var(--s-1);
     flex-wrap: wrap;
+    z-index: 2;
+  }
+  @media (max-width: 520px) {
+    .crew-actions {
+      position: static;
+      margin: calc(var(--s-3) * -1) 0 var(--s-3);
+      justify-content: flex-end;
+    }
   }
   .head-btn {
     font-family: var(--font-head);
@@ -104,13 +107,13 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
     padding: var(--s-1) var(--s-2);
-    border: var(--stroke-thin) solid var(--fg-dim);
+    border: 0;
     background: transparent;
     color: var(--fg-dim);
     cursor: pointer;
     min-height: 32px;
   }
-  .head-btn:hover { border-color: var(--fg); color: var(--fg); }
+  .head-btn:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
 
   /* CSS multicolumn gives masonry-style packing: mixed expanded / collapsed
    * cards flow naturally without forcing the row height to the tallest card.
@@ -130,10 +133,10 @@
   }
 
   .add-card {
-    background: transparent;
-    border: var(--stroke-heavy) dashed var(--fg-dim);
+    background: var(--bg);
+    border: 0;
     min-height: 5rem;
-    color: var(--fg-dim);
+    color: var(--accent-bright);
     font-family: var(--font-head);
     display: flex;
     flex-direction: row;
@@ -142,10 +145,12 @@
     gap: var(--s-3);
     cursor: pointer;
     padding: var(--s-3);
+    transition: background 80ms linear, color 80ms linear;
   }
-  .add-card:hover { border-color: var(--fg); color: var(--fg); background: var(--bg-dim); }
-  .plus { font-family: var(--font-display); font-size: 1.75rem; line-height: 1; color: var(--fg-dim); }
-  .add-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; }
+  .add-card:hover { background: var(--accent); color: var(--c-bone); }
+  .plus { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--accent); transition: color 80ms linear; }
+  .add-card:hover .plus { color: var(--c-bone); }
+  .add-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
 
   /* Masonry (CSS columns) treats Davy Jones' Locker as a separate flow. */
   .locker-grid { margin-top: var(--s-3); }

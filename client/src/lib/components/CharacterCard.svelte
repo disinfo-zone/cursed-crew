@@ -8,12 +8,17 @@
     session: CrewSession;
     character: Character;
     deceased: boolean;
-    tilt: 'left' | 'right' | 'none';
+
     collapsed: boolean;
     onToggleCollapsed: () => void;
   };
 
-  let { session, character, deceased, tilt, collapsed, onToggleCollapsed }: Props = $props();
+  let { session, character, deceased, collapsed, onToggleCollapsed }: Props = $props();
+
+  /* Stable micro-rotation per character — like papers tossed on a table */
+  const rotation = $derived(
+    ((character.id.charCodeAt(0) + character.id.charCodeAt(3)) % 9 - 4) * 0.12
+  );
 
   const CLASSES = [
     'Rapscallion', 'Swashbuckler', 'Brute', 'Zealot', 'Sorcerer',
@@ -120,8 +125,7 @@
   class="card"
   class:dead={deceased}
   class:collapsed
-  class:tilt-left={tilt === 'left' && !collapsed}
-  class:tilt-right={tilt === 'right' && !collapsed}
+  style:transform={`rotate(${rotation}deg)`}
   aria-label="Character: {character.name || 'Unnamed'}"
 >
   <header class="card-head">
@@ -226,8 +230,6 @@
     </div>
   {:else}
     <!-- Full body ─────────────────────────────────────────────────────── -->
-    <!-- HP is paired (current / max), so it gets its own full-width row
-         with compact steppers. Luck + Silver share the next row. -->
     <div class="primary-stats">
       <div class="ps-block ps-wide">
         <span class="ps-name">HP</span>
@@ -264,7 +266,7 @@
         />
       </div>
 
-      <div class="ps-block ps-wide">
+      <div class="ps-block">
         <span class="ps-name">Silver</span>
         <Stepper
           value={character.silver}
@@ -394,23 +396,31 @@
         </ul>
       {/if}
       <div class="inv-add">
-        <input
-          class="input"
-          type="text"
-          maxlength="200"
-          bind:value={invName}
-          placeholder="cutlass, flintlock, rope, rum…"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInventory(); } }}
-        />
-        <input
-          class="input"
-          type="text"
-          maxlength="200"
-          bind:value={invNotes}
-          placeholder="notes (optional)"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInventory(); } }}
-        />
-        <button type="button" class="btn" onclick={addInventory} disabled={invName.trim().length === 0}>Add</button>
+        <div class="add-col">
+          <label class="add-label" for="inv-name-{character.id}">Item</label>
+          <input
+            id="inv-name-{character.id}"
+            class="input"
+            type="text"
+            maxlength="200"
+            bind:value={invName}
+            placeholder="cutlass, flintlock…"
+            onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInventory(); } }}
+          />
+        </div>
+        <div class="add-col">
+          <label class="add-label" for="inv-notes-{character.id}">Notes</label>
+          <input
+            id="inv-notes-{character.id}"
+            class="input"
+            type="text"
+            maxlength="200"
+            bind:value={invNotes}
+            placeholder="quirks, curses, charges…"
+            onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addInventory(); } }}
+          />
+        </div>
+        <button type="button" class="btn add-btn" onclick={addInventory} disabled={invName.trim().length === 0}>Add</button>
       </div>
     </section>
 
@@ -430,7 +440,6 @@
 <style>
   .card {
     background: var(--bg-dim);
-    border: var(--stroke-heavy) solid var(--ink-line);
     padding: var(--s-4);
     display: flex;
     flex-direction: column;
@@ -450,7 +459,6 @@
     flex-direction: column;
     gap: var(--s-2);
     padding-bottom: var(--s-2);
-    border-bottom: var(--stroke) solid var(--ink-line);
   }
   .name-row {
     display: grid;
@@ -463,24 +471,28 @@
     min-width: 0;
     background: transparent;
     border: 0;
-    border-bottom: var(--stroke-thin) dashed var(--fg-dim);
-    padding: var(--s-1) 0;
+    border-bottom: var(--stroke-thin) solid var(--fg-dim);
+    padding: var(--s-1) var(--s-2);
     font-family: var(--font-display);
     font-size: clamp(1.15rem, 2.5vw, 1.75rem);
     color: var(--accent);
     letter-spacing: 0.02em;
   }
-  .name-input:focus { outline: none; border-bottom-color: var(--accent); border-bottom-style: solid; }
+  .name-input:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+    text-shadow: 0.5px 0 0 color-mix(in oklab, var(--accent) 30%, transparent);
+  }
   .collapse-btn {
     width: 32px;
     height: 32px;
     background: transparent;
-    border: var(--stroke-thin) solid var(--fg-dim);
+    border: 0;
     color: var(--fg-dim);
     font-family: var(--font-mono);
     cursor: pointer;
   }
-  .collapse-btn:hover { border-color: var(--fg); color: var(--fg); }
+  .collapse-btn:hover { color: var(--fg); }
 
   .meta-row {
     display: flex;
@@ -492,8 +504,9 @@
     flex: 1;
     min-width: 0;
     padding: var(--s-2);
-    border: var(--stroke) solid var(--ink-line);
-    background: var(--bg);
+    border: 0;
+    border-bottom: var(--stroke) solid var(--ink-line);
+    background: color-mix(in oklab, var(--fg) 3%, transparent);
     color: var(--fg);
     font-family: var(--font-head);
     font-size: 0.8rem;
@@ -501,6 +514,17 @@
     text-transform: uppercase;
     border-radius: 0;
     min-height: 36px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right var(--s-2) center;
+    padding-right: var(--s-6);
+    outline: none;
+  }
+  .class-select:focus {
+    border-bottom-color: var(--accent-bright);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
   }
   .level-pair { display: inline-flex; align-items: center; gap: var(--s-1); flex-shrink: 0; }
   .lvl-label { font-family: var(--font-head); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-dim); }
@@ -540,7 +564,6 @@
     display: inline-flex;
     align-items: center;
     padding: 2px var(--s-2);
-    border: var(--stroke-thin) solid var(--accent);
     color: var(--c-bone);
     background: var(--accent);
     font-family: var(--font-head);
@@ -552,19 +575,12 @@
   /* ─── Primary stats (HP / Luck / Silver) ──────────────────────────── */
   .primary-stats {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr;
     gap: var(--s-2);
+    margin-bottom: var(--s-3);
   }
-  .ps-wide { grid-column: span 1; }
-  .primary-stats .ps-wide:first-child { grid-column: 1 / -1; }
-  .primary-stats .ps-wide:last-child { grid-column: 1 / -1; }
-  /* When there are only 3 blocks total, middle block is Luck and flanks
-     stretch automatically. The two ps-wide:* rules above collapse HP and
-     Silver into their own rows; Luck sits in between on its own row too.
-     That way nothing wraps in a narrow card. */
-  .primary-stats {
-    grid-template-columns: 1fr;  /* stack by default — each block full-width */
-  }
+  /* In the masonry layout cards are often ~300-400px wide.
+     Keep everything stacked so nothing wraps or overflows. */
   .ps-block {
     display: flex;
     flex-direction: row;
@@ -573,6 +589,7 @@
     background: var(--bg);
     align-items: center;
     min-width: 0;
+    flex-wrap: wrap;
   }
   .ps-name {
     font-family: var(--font-head);
@@ -583,30 +600,32 @@
     flex-shrink: 0;
     min-width: 3.5rem;
   }
-  .ps-pair { display: flex; align-items: center; gap: var(--s-1); flex-wrap: nowrap; }
+  .ps-pair { display: flex; align-items: center; gap: var(--s-2); flex-wrap: nowrap; }
   .slash { color: var(--fg-mute); font-family: var(--font-mono); font-size: 1.1rem; }
 
   /* ─── Ability grid ────────────────────────────────────────────────── */
-  /* 5 abilities laid out as 2 columns. Each row shows the short label tight
-   * beside the compact stepper; the odd one out (Spirit) takes a full row.
-   * The compact stepper is ~120px wide, so two per row needs ~260px min —
-   * fits every reasonable card width. */
   .ability-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--s-1);
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+  /* Only go 2-up when there is enough room; never 3-up inside cards
+     because masonry columns are too narrow. */
+  @media (min-width: 340px) {
+    .ability-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   .ability {
-    display: inline-flex;
+    display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
     gap: var(--s-2);
-    padding: var(--s-1) var(--s-2);
+    padding: var(--s-2) var(--s-3);
     background: var(--bg);
     min-width: 0;
-    overflow: hidden;
   }
-  .ability:nth-child(5) { grid-column: 1 / -1; }
   .ab-label {
     font-family: var(--font-head);
     font-size: 0.7rem;
@@ -614,7 +633,6 @@
     letter-spacing: 0.1em;
     color: var(--fg-dim);
     flex-shrink: 0;
-    min-width: 2.2em;
   }
 
   /* ─── Conditions ──────────────────────────────────────────────────── */
@@ -633,7 +651,7 @@
     padding: 3px var(--s-3);
     background: transparent;
     color: var(--fg-dim);
-    border: var(--stroke) solid var(--fg-dim);
+    border: 0;
     font-family: var(--font-head);
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -641,9 +659,9 @@
     cursor: pointer;
     min-height: 30px;
   }
-  .cond:hover { color: var(--fg); border-color: var(--fg); }
-  .cond.on { background: var(--accent); color: var(--c-bone); border-color: var(--accent); }
-  .cond.custom { background: var(--c-status-watched); border-color: var(--c-status-watched); color: var(--c-bone); }
+  .cond:hover { color: var(--fg); }
+  .cond.on { background: var(--accent); color: var(--c-bone); }
+  .cond.custom { background: var(--c-status-watched); color: var(--c-bone); }
   .cond-add { margin-top: var(--s-2); }
   .cond-add input { width: 100%; min-height: 36px; }
 
@@ -680,35 +698,49 @@
   .inv-notes { font-family: var(--font-body); font-style: italic; color: var(--fg-dim); }
   .inv-remove {
     width: 28px; height: 28px; line-height: 1;
-    color: var(--fg-dim); border: var(--stroke-thin) solid var(--fg-dim);
+    color: var(--fg-dim); border: 0;
     background: transparent; cursor: pointer;
     font-family: var(--font-mono); font-size: 1rem;
     flex-shrink: 0;
   }
-  .inv-remove:hover { background: var(--accent); color: var(--c-bone); border-color: var(--accent); }
+  .inv-remove:hover { color: var(--accent-bright); }
 
   .inv-add {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
     gap: var(--s-2);
-    margin-top: var(--s-2);
+    margin-top: var(--s-3);
+    align-items: end;
   }
+  .add-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    min-width: 0;
+  }
+  .add-label {
+    font-family: var(--font-head);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--fg-dim);
+  }
+  .add-btn { min-height: var(--tap-min); }
   @media (max-width: 520px) {
     .inv-add { grid-template-columns: 1fr auto; }
-    .inv-add input:first-child { grid-column: 1 / -1; }
+    .inv-add > .add-col:first-of-type { grid-column: 1 / -1; }
   }
 
   /* ─── Footer ──────────────────────────────────────────────────────── */
   .card-foot {
     margin-top: var(--s-2);
     padding-top: var(--s-2);
-    border-top: var(--stroke-thin) dashed var(--fg-dim);
     display: flex;
     gap: var(--s-2);
     justify-content: flex-end;
     flex-wrap: wrap;
   }
   .card-foot .btn { font-size: 0.75rem; min-height: 34px; padding: var(--s-1) var(--s-3); }
-  .remove { color: var(--accent-bright); border-color: var(--accent-bright); }
-  .remove:hover { background: var(--accent-bright); color: var(--c-bone); }
+  .remove { color: var(--accent-bright); }
+  .remove:hover { color: var(--accent); text-decoration: underline; }
 </style>

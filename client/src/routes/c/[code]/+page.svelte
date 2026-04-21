@@ -124,7 +124,7 @@
     <section class="modules">
       <Ship {session} />
       <Characters {session} />
-      <Manifest {session} />
+      <Manifest ledger={session.data} allowEdit={true} dispatch={(a) => session.dispatch(a)} />
       <Reckoning {session} />
       <Log {session} />
       <Bounties {session} />
@@ -145,26 +145,23 @@
     margin: 0 auto;
   }
   .top {
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: var(--s-3);
-    border-bottom: var(--stroke) solid var(--ink-line);
-    align-items: stretch;
+    padding: var(--s-2) var(--s-4);
+  }
+  @media (max-width: 640px) {
+    .top {
+      flex-wrap: wrap;
+      padding: var(--s-2) var(--s-3);
+    }
   }
   .top-right {
     display: flex;
     align-items: center;
-    gap: var(--s-3);
-    padding: var(--s-2) var(--s-3);
-  }
-  @media (max-width: 640px) {
-    .top {
-      grid-template-columns: 1fr;
-    }
-    .top-right {
-      border-top: var(--stroke-thin) solid var(--ink-line);
-      justify-content: space-between;
-    }
+    gap: var(--s-2);
+    flex-shrink: 0;
   }
   .home-link {
     font-family: var(--font-head);
@@ -173,9 +170,20 @@
     letter-spacing: 0.12em;
     text-decoration: none;
     color: var(--fg-dim);
+    padding: var(--s-1) var(--s-2);
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
   }
   .home-link:hover {
     color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  /* Theme toggle inside the top bar — keep vertical metrics consistent */
+  .top :global(.theme-toggle) {
+    padding: var(--s-1) var(--s-2);
+    min-height: 32px;
   }
   .hero {
     text-align: center;
@@ -184,6 +192,11 @@
   .hero h1 {
     color: var(--accent);
     word-break: break-word;
+    /* Hand-set type: tilted, with ink-bleed shadow */
+    transform: rotate(-0.5deg);
+    text-shadow:
+      1px 1px 0 var(--bg-deep),
+      -0.5px 0 0 color-mix(in oklab, var(--accent) 25%, transparent);
   }
   .crew-code {
     color: var(--fg-mute);

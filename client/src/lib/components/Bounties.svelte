@@ -232,7 +232,6 @@
     flex-direction: column;
     gap: var(--s-3);
     padding: var(--s-4);
-    border: var(--stroke) dashed var(--fg-dim);
     background: var(--bg);
   }
   .new-grid {
@@ -263,9 +262,7 @@
   .bounty-card {
     padding: var(--s-3);
     background: var(--bg);
-    border: var(--stroke-heavy) solid var(--ink-line);
-    border-left-width: 6px;
-    border-left-color: var(--accent);
+    border-left: 6px solid var(--accent);
     display: flex;
     flex-direction: column;
     gap: var(--s-2);
@@ -288,8 +285,8 @@
     min-width: 0;
     background: transparent;
     border: 0;
-    border-bottom: var(--stroke-thin) dashed var(--fg-dim);
-    padding: var(--s-1) 0;
+    border-bottom: var(--stroke-thin) solid var(--fg-dim);
+    padding: var(--s-1) var(--s-2);
     font-family: var(--font-display);
     font-size: clamp(1.1rem, 2vw, 1.5rem);
     color: var(--accent);
@@ -298,7 +295,6 @@
   .bc-target:focus {
     outline: none;
     border-bottom-color: var(--accent);
-    border-bottom-style: solid;
   }
   .bc-target-static {
     font-family: var(--font-display);
@@ -349,11 +345,10 @@
   }
   .btn.danger {
     color: var(--accent-bright);
-    border-color: var(--accent-bright);
   }
   .btn.danger:hover {
-    background: var(--accent-bright);
-    color: var(--c-bone);
+    color: var(--accent);
+    text-decoration: underline;
   }
 
   .resolved-toggle {
@@ -361,7 +356,7 @@
     align-items: center;
     gap: var(--s-2);
     padding: var(--s-2) var(--s-3);
-    border: var(--stroke-thin) solid var(--fg-dim);
+    border: 0;
     background: transparent;
     color: var(--fg-dim);
     cursor: pointer;
@@ -373,8 +368,8 @@
     justify-content: space-between;
   }
   .resolved-toggle:hover {
-    border-color: var(--fg);
     color: var(--fg);
+    text-decoration: underline;
   }
   .resolved-toggle:focus-visible {
     outline: var(--ring) solid var(--accent-bright);

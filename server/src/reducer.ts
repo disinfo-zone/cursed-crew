@@ -61,6 +61,7 @@ const MAX_LIST_ITEM = 200;
 const MAX_INVENTORY = 60;
 const MAX_CONDITIONS = 24;
 const MAX_UPGRADES = 40;
+const MAX_SHANTIES = 40;
 const MAX_FACTIONS = 32;
 const MAX_CARGO = 80;
 const MAX_RELICS = 40;
@@ -230,6 +231,16 @@ function validateShipValue(field: keyof Ship, value: unknown):
       const v = int(value, STAT_MIN, STAT_MAX);
       return v === null ? { ok: false, reason: 'invalid_skill' } : { ok: true, applied: { skill: v } };
     }
+    case 'agility': {
+      const v = int(value, STAT_MIN, STAT_MAX);
+      return v === null ? { ok: false, reason: 'invalid_agility' } : { ok: true, applied: { agility: v } };
+    }
+    case 'broadsides':
+    case 'smallArms':
+    case 'ram': {
+      const v = int(value, 0, 12);
+      return v === null ? { ok: false, reason: 'invalid_die_size' } : { ok: true, applied: { [field]: v } };
+    }
     case 'crewCount':
     case 'minCrew':
     case 'maxCrew': {
@@ -247,6 +258,10 @@ function validateShipValue(field: keyof Ship, value: unknown):
     case 'upgrades': {
       const v = stringList(value, MAX_UPGRADES, MAX_LIST_ITEM);
       return v === null ? { ok: false, reason: 'invalid_upgrades' } : { ok: true, applied: { upgrades: v } };
+    }
+    case 'shanties': {
+      const v = stringList(value, MAX_SHANTIES, MAX_LIST_ITEM);
+      return v === null ? { ok: false, reason: 'invalid_shanties' } : { ok: true, applied: { shanties: v } };
     }
     default:
       return { ok: false, reason: 'unknown_field' };
@@ -533,6 +548,21 @@ export function applyAction(state: CrewData, action: Action): ApplyResult {
       const i = int(action.index, 0, MAX_UPGRADES - 1);
       if (i === null || i >= next.ship.upgrades.length) return reject('bad_index');
       next.ship.upgrades = next.ship.upgrades.filter((_, idx) => idx !== i);
+      return ok(next);
+    }
+
+    case 'ship.addShanty': {
+      const text = str(action.text, MAX_LIST_ITEM, false);
+      if (!text) return reject('invalid_text');
+      if (next.ship.shanties.length >= MAX_SHANTIES) return reject('too_many_shanties');
+      next.ship.shanties = [...next.ship.shanties, text];
+      return ok(next);
+    }
+
+    case 'ship.removeShanty': {
+      const i = int(action.index, 0, MAX_SHANTIES - 1);
+      if (i === null || i >= next.ship.shanties.length) return reject('bad_index');
+      next.ship.shanties = next.ship.shanties.filter((_, idx) => idx !== i);
       return ok(next);
     }
 

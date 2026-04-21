@@ -247,6 +247,8 @@
   }
   .hero h1 {
     color: var(--accent);
+    transform: rotate(-0.3deg);
+    text-shadow: 1px 1px 0 var(--bg-deep);
   }
   .tagline {
     font-family: var(--font-body);
@@ -272,9 +274,9 @@
   .warn {
     font-family: var(--font-body);
     font-size: 0.95rem;
-    color: var(--fg-dim);
-    border-left: var(--stroke-heavy) solid var(--accent);
-    padding: var(--s-2) 0 var(--s-2) var(--s-4);
+    color: var(--accent-bright);
+    font-style: italic;
+    padding: var(--s-2) 0;
     margin: 0;
   }
   .warn strong {
@@ -303,20 +305,24 @@
     margin: var(--s-3) 0 0;
     display: flex;
     flex-direction: column;
-    gap: var(--s-1);
+    gap: var(--s-2);
+  }
+  .known li {
+    background: color-mix(in oklab, var(--fg) 3%, transparent);
   }
   .known a {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: var(--s-2) var(--s-3);
-    border: var(--stroke-thin) solid var(--fg-dim);
+    padding: var(--s-3) var(--s-4);
     text-decoration: none;
     color: var(--fg);
+    border-left: var(--stroke-heavy) solid var(--accent);
+    transition: background 60ms linear;
   }
   .known a:hover {
-    border-color: var(--fg);
-    background: var(--bg-dim);
+    background: color-mix(in oklab, var(--accent) 8%, var(--bg));
+    text-decoration: none;
   }
   .known-name {
     font-family: var(--font-head);

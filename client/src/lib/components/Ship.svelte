@@ -22,9 +22,6 @@
   const VESSEL_CLASSES = VESSEL_GROUPS.flatMap((g) => g.items);
   const OTHER = '__other__';
 
-  // The select reflects the built-in list; if the crew chose a custom class
-  // (homebrew, or a book vessel we don't list), the select shows "Other…"
-  // and a text input appears beside it.
   const classSelection = $derived(
     ship && VESSEL_CLASSES.includes(ship.class) ? ship.class : OTHER
   );
@@ -40,9 +37,9 @@
   }
 
   const HULL_TIERS: Array<{ value: HullTier; label: string; die: string }> = [
-    { value: 'light',  label: 'Light',  die: '-d2' },
-    { value: 'medium', label: 'Medium', die: '-d4' },
-    { value: 'heavy',  label: 'Heavy',  die: '-d6' }
+    { value: 'light',  label: 'Light',  die: '−d2' },
+    { value: 'medium', label: 'Medium', die: '−d4' },
+    { value: 'heavy',  label: 'Heavy',  die: '−d6' }
   ];
 
   let nameTimer: ReturnType<typeof setTimeout> | null = null;
@@ -74,15 +71,24 @@
     session.dispatch({ kind: 'ship.addUpgrade', text });
     upgradeDraft = '';
   }
+
+  let shantyDraft = $state('');
+  function addShanty() {
+    const text = shantyDraft.trim();
+    if (!text) return;
+    session.dispatch({ kind: 'ship.addShanty', text });
+    shantyDraft = '';
+  }
+
+  const dieFormat = (n: number) => `d${n}`;
 </script>
 
 {#if ship}
   <section class="panel ship">
     <h2 class="panel-head">The Ship</h2>
 
-    <!-- Name -->
+    <!-- Name — big, centered, hand-set type -->
     <div class="field name-field">
-      <label for="ship-name">Name</label>
       <input
         id="ship-name"
         class="input ship-name"
@@ -92,6 +98,7 @@
         oninput={(e) => debounceText('name', (e.currentTarget as HTMLInputElement).value, 'name')}
         onblur={(e) => setField('name', (e.currentTarget as HTMLInputElement).value)}
         placeholder="Unnamed ship"
+        aria-label="Ship name"
       />
     </div>
 
@@ -106,15 +113,13 @@
           onchange={onClassSelect}
         >
           {#each VESSEL_GROUPS as g (g.label)}
-            <optgroup label={g.label}>
-              {#each g.items as v (v)}
-                <option value={v}>{v}</option>
-              {/each}
-            </optgroup>
+            <option disabled>— {g.label} —</option>
+            {#each g.items as v (v)}
+              <option value={v}>{v}</option>
+            {/each}
           {/each}
-          <optgroup label="Custom">
-            <option value={OTHER}>Other…</option>
-          </optgroup>
+          <option disabled>— Custom —</option>
+          <option value={OTHER}>Other…</option>
         </select>
       </div>
 
@@ -134,7 +139,7 @@
         </div>
       {/if}
 
-      <div class="field">
+      <div class="field hull-field">
         <span id="hull-label" class="field-label">Hull</span>
         <div class="tier-group" role="radiogroup" aria-labelledby="hull-label">
           {#each HULL_TIERS as t (t.value)}
@@ -147,15 +152,14 @@
               onclick={() => setField('hullTier', t.value)}
             >
               <span class="tier-label">{t.label}</span>
-              <span class="tier-die stat">{t.die}</span>
+              <span class="tier-die">{t.die}</span>
             </button>
           {/each}
         </div>
       </div>
     </div>
 
-    <!-- Numeric stats. Compact steppers throughout — a stat grid with three
-         non-compact pairs + a slash won't fit a 250px-wide column. -->
+    <!-- Stat blocks — big stamped numbers, 4-up on desktop -->
     <div class="stats-grid">
       <div class="stat-block">
         <span class="stat-name">HP</span>
@@ -181,6 +185,48 @@
       </div>
 
       <div class="stat-block">
+        <span class="stat-name">Broadsides</span>
+        <Stepper
+          value={ship.broadsides ?? 0}
+          min={0}
+          max={12}
+          step={2}
+          label="Broadsides"
+          onChange={(v) => setField('broadsides', v)}
+          compact
+          format={dieFormat}
+        />
+      </div>
+
+      <div class="stat-block">
+        <span class="stat-name">Small Arms</span>
+        <Stepper
+          value={ship.smallArms ?? 0}
+          min={0}
+          max={12}
+          step={2}
+          label="Small Arms"
+          onChange={(v) => setField('smallArms', v)}
+          compact
+          format={dieFormat}
+        />
+      </div>
+
+      <div class="stat-block">
+        <span class="stat-name">Ram</span>
+        <Stepper
+          value={ship.ram ?? 0}
+          min={0}
+          max={12}
+          step={2}
+          label="Ram"
+          onChange={(v) => setField('ram', v)}
+          compact
+          format={dieFormat}
+        />
+      </div>
+
+      <div class="stat-block">
         <span class="stat-name">Speed</span>
         <Stepper
           value={ship.speed}
@@ -188,6 +234,18 @@
           max={999}
           label="Speed"
           onChange={(v) => setField('speed', v)}
+          compact
+        />
+      </div>
+
+      <div class="stat-block">
+        <span class="stat-name">Agility</span>
+        <Stepper
+          value={ship.agility ?? 0}
+          min={-10}
+          max={30}
+          label="Agility"
+          onChange={(v) => setField('agility', v)}
           compact
         />
       </div>
@@ -219,10 +277,14 @@
           />
         </div>
       </div>
+    </div>
 
-      <div class="stat-block crew-counts">
-        <span class="stat-name">Crew</span>
-        <div class="stat-pair">
+    <!-- Crew — full-width trio -->
+    <div class="crew-band">
+      <span class="stat-name">Crew</span>
+      <div class="crew-trio">
+        <div class="crew-cell">
+          <span class="crew-label">Aboard</span>
           <Stepper
             value={ship.crewCount}
             min={0}
@@ -231,7 +293,9 @@
             onChange={(v) => setField('crewCount', v)}
             compact
           />
-          <span class="range-sep">min</span>
+        </div>
+        <div class="crew-cell">
+          <span class="crew-label">Min</span>
           <Stepper
             value={ship.minCrew}
             min={0}
@@ -240,7 +304,9 @@
             onChange={(v) => setField('minCrew', v)}
             compact
           />
-          <span class="range-sep">max</span>
+        </div>
+        <div class="crew-cell">
+          <span class="crew-label">Max</span>
           <Stepper
             value={ship.maxCrew}
             min={0}
@@ -292,6 +358,40 @@
       </div>
     </div>
 
+    <!-- Shanties -->
+    <div class="field upgrades shanties">
+      <span class="field-label">Shanties</span>
+      <p class="muted">Each day the crew can sing <span class="stat">1 + captain's Spirit</span> shanties. Test Crew Skill DR12.</p>
+      {#if (ship.shanties ?? []).length > 0}
+        <ul class="upgrade-list">
+          {#each (ship.shanties ?? []) as s, i}
+            <li>
+              <span class="upgrade-text">{s}</span>
+              <button
+                type="button"
+                class="upgrade-remove"
+                aria-label="Remove shanty {s}"
+                onclick={() => session.dispatch({ kind: 'ship.removeShanty', index: i })}
+              >×</button>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p class="muted">The crew knows no songs yet.</p>
+      {/if}
+      <div class="upgrade-add">
+        <input
+          class="input"
+          type="text"
+          maxlength="200"
+          bind:value={shantyDraft}
+          placeholder="Blow the Man Down, Drop of Nelson's Blood…"
+          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addShanty(); } }}
+        />
+        <button type="button" class="btn" onclick={addShanty} disabled={shantyDraft.trim().length === 0}>Add</button>
+      </div>
+    </div>
+
     <!-- Notes -->
     <div class="field">
       <label for="ship-notes">Notes</label>
@@ -332,8 +432,9 @@
   .select {
     min-height: var(--tap-min);
     padding: var(--s-2) var(--s-3);
-    border: var(--stroke) solid var(--ink-line);
-    background: var(--bg);
+    border: 0;
+    border-bottom: var(--stroke) solid var(--ink-line);
+    background: color-mix(in oklab, var(--fg) 3%, transparent);
     color: var(--fg);
     font-family: var(--font-head);
     font-size: 0.9rem;
@@ -342,21 +443,22 @@
     border-radius: 0;
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='%23EFE3C8' stroke-width='1.5' fill='none'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='currentColor' stroke-width='1.5' fill='none'/></svg>");
     background-repeat: no-repeat;
     background-position: right var(--s-3) center;
     padding-right: var(--s-8);
     width: 100%;
+    outline: none;
   }
+
   .select:focus {
-    outline: var(--ring) solid var(--accent);
-    outline-offset: -1px;
-    border-color: var(--accent);
+    border-bottom-color: var(--accent-bright);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
   }
 
   .tier-group {
     display: inline-flex;
-    border: var(--stroke-heavy) solid var(--ink-line);
+    gap: var(--s-1);
   }
   .tier-btn {
     display: inline-flex;
@@ -366,21 +468,20 @@
     background: var(--bg);
     color: var(--fg-dim);
     border: 0;
-    border-right: var(--stroke-thin) solid var(--ink-line);
     cursor: pointer;
     min-width: 56px;
     min-height: var(--tap-min);
   }
-  .tier-btn:last-child { border-right: 0; }
   .tier-btn:hover { background: var(--bg-dim); color: var(--fg); }
   .tier-btn.tier-on { background: var(--accent); color: var(--c-bone); }
   .tier-btn:focus-visible { outline: var(--ring) solid var(--accent-bright); outline-offset: -2px; }
   .tier-label { font-family: var(--font-head); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
   .tier-die { font-size: 0.8rem; }
 
+  /* ─── Stat grid ─────────────────────────────────────────────────────── */
   .stats-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--s-5) var(--s-4);
     margin-top: var(--s-5);
     align-items: start;
@@ -391,7 +492,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--s-1);
+    gap: var(--s-2);
+    min-width: 0;
   }
   .stat-name {
     font-family: var(--font-head);
@@ -403,38 +505,86 @@
   .stat-pair {
     display: flex;
     align-items: center;
-    gap: var(--s-1);
-    flex-wrap: wrap;
+    gap: var(--s-2);
+    flex-wrap: nowrap;
+    min-width: 0;
   }
-  .crew-counts {
-    grid-column: 1 / -1;
+
+  /* Bigger stamped numbers inside the ship card */
+  .ship :global(.stepper-value) {
+    font-size: 1.75rem;
+    min-width: 3ch;
+    padding: var(--s-1) var(--s-2);
+    min-height: 44px;
   }
-  .slash, .range-sep {
+  .ship :global(.step-btn) {
+    font-size: 1.75rem;
+  }
+  .ship :global(.stepper.compact .stepper-value) {
+    font-size: 1.75rem;
+    min-width: 3ch;
+    padding: var(--s-1) var(--s-2);
+    min-height: 44px;
+  }
+  .ship :global(.stepper.compact .step-btn) {
+    font-size: 1.75rem;
+  }
+
+  .slash {
     color: var(--fg-mute);
     font-family: var(--font-mono);
-    font-size: 1.2rem;
-  }
-  .range-sep {
-    font-family: var(--font-head);
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0 var(--s-1);
+    font-size: 1.4rem;
   }
   .cargo-used {
     font-family: var(--font-mono);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     min-width: 2.5ch;
     text-align: center;
-    padding: 0 var(--s-1);
+    padding: var(--s-1) var(--s-2);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
   }
-  .cargo-used.over { color: var(--accent-bright); }
+  .cargo-used.over {
+    color: var(--accent-bright);
+    background: color-mix(in oklab, var(--accent-bright) 10%, transparent);
+  }
+
+  /* ─── Crew band ─────────────────────────────────────────────────────── */
+  .crew-band {
+    margin-top: var(--s-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+  .crew-trio {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-3);
+  }
+  .crew-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-1);
+    padding: var(--s-2) var(--s-3);
+    background: var(--bg);
+    min-width: 0;
+  }
+  .crew-label {
+    font-family: var(--font-head);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--fg-dim);
+  }
+  @media (max-width: 520px) {
+    .crew-trio { grid-template-columns: 1fr; }
+    .crew-cell { flex-direction: row; align-items: center; justify-content: space-between; }
+  }
 
   .warn {
     margin-top: var(--s-3);
-    padding: var(--s-2) var(--s-3);
-    border-left: var(--stroke-heavy) solid var(--accent);
-    color: var(--fg-dim);
+    padding: var(--s-2) 0;
+    color: var(--accent-bright);
     font-style: italic;
   }
 
@@ -452,18 +602,17 @@
     align-items: center;
     gap: var(--s-2);
     padding: var(--s-2) var(--s-3);
-    border: var(--stroke-thin) solid var(--ink-line);
     background: var(--bg);
   }
   .upgrade-text { flex: 1 1 auto; font-family: var(--font-body); min-width: 0; word-break: break-word; }
   .upgrade-remove {
     width: 28px; height: 28px; line-height: 1;
     font-family: var(--font-mono); font-size: 1.1rem;
-    color: var(--fg-dim); border: var(--stroke-thin) solid var(--fg-dim);
-    background: transparent; cursor: pointer;
+    color: var(--fg-dim);
+    background: transparent; border: 0; cursor: pointer;
     flex-shrink: 0;
   }
-  .upgrade-remove:hover { background: var(--accent); color: var(--c-bone); border-color: var(--accent); }
+  .upgrade-remove:hover { color: var(--accent-bright); }
 
   .upgrade-add {
     display: grid;

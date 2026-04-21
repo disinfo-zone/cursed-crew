@@ -88,8 +88,7 @@
     align-items: center;
     gap: var(--s-3);
     padding: var(--s-3) var(--s-4);
-    background: var(--bg-dim);
-    border-bottom: var(--stroke) solid var(--ink-line);
+    min-width: 0;
   }
   .label {
     font-family: var(--font-head);
@@ -98,6 +97,7 @@
     letter-spacing: 0.1em;
     color: var(--fg-dim);
     white-space: nowrap;
+    flex-shrink: 0;
   }
   ul {
     list-style: none;
@@ -106,11 +106,13 @@
     display: flex;
     gap: var(--s-3);
     flex-wrap: wrap;
+    min-width: 0;
   }
   li {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
+    min-width: 0;
   }
   .mine .seal-mine {
     cursor: pointer;
@@ -134,14 +136,16 @@
     white-space: nowrap;
   }
   .rename-input {
-    background: var(--bg);
-    border: var(--stroke) solid var(--accent);
+    background: transparent;
+    border: 0;
+    border-bottom: var(--stroke) solid var(--accent);
     color: var(--fg);
     font-family: var(--font-head);
     font-size: 0.9rem;
     padding: var(--s-1) var(--s-2);
     width: 10rem;
     min-height: 32px;
+    outline: none;
   }
   @media (max-width: 640px) {
     .full-name { display: none; }

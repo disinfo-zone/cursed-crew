@@ -14,12 +14,17 @@ export type Ship = {
   maxHp: number;
   hullTier: HullTier;
   speed: number;
+  agility: number;
   skill: number;
+  broadsides: number;
+  smallArms: number;
+  ram: number;
   crewCount: number;
   minCrew: number;
   maxCrew: number;
   cargoMax: number;
   upgrades: string[];
+  shanties: string[];
   notes: string;
 };
 
@@ -152,6 +157,8 @@ export type Action =
   | { kind: 'ship.set'; field: keyof Ship; value: unknown }
   | { kind: 'ship.addUpgrade'; text: string }
   | { kind: 'ship.removeUpgrade'; index: number }
+  | { kind: 'ship.addShanty'; text: string }
+  | { kind: 'ship.removeShanty'; index: number }
 
   // Characters
   | { kind: 'character.create'; id: string }

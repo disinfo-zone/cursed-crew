@@ -69,7 +69,7 @@
     align-items: center;
     gap: var(--s-2);
     padding: var(--s-1) var(--s-3);
-    border: var(--stroke) solid var(--fg-dim);
+    border: 0;
     background: transparent;
     color: var(--fg);
     font-family: var(--font-head);
@@ -80,8 +80,8 @@
     min-height: 32px;
   }
   .theme-toggle:hover {
-    border-color: var(--fg);
-    background: var(--bg-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
   .theme-toggle:focus-visible {
     outline: var(--ring) solid var(--accent-bright);
@@ -96,4 +96,7 @@
     width: 100%;
     height: 100%;
   }
+  .indicator[data-mode='auto'] { color: var(--brass); }
+  .indicator[data-mode='dark'] { color: var(--fg-mute); }
+  .indicator[data-mode='light'] { color: var(--accent-bright); }
 </style>

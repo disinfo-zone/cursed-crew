@@ -1,13 +1,8 @@
 /*
- * Shared component treatments. Kept deliberately small — per-module Svelte
- * components may add their own scoped styles, but these classes are the
- * vocabulary everything reaches for.
- *
- * Rules (from design-doc §6):
- *  - 0 border-radius anywhere
- *  - No drop shadows, no gradients
- *  - Thick flat borders, not Material elevation
- *  - Primary action = blood fill, bone text
+ * Shared component treatments. Borderless, raw, punk.
+ * No boxes, no 3D depth, no inner frames.
+ * Separation comes from spacing, typography, blood banners,
+ * and background shifts — not borders.
  */
 
 /* ------------------------------ buttons ----------------------------------- */
@@ -18,8 +13,8 @@
   justify-content: center;
   min-height: var(--tap-min);
   padding: var(--s-3) var(--s-5);
-  border: var(--stroke-heavy) solid var(--ink-line);
-  background: var(--bg-dim);
+  border: 0;
+  background: var(--bg);
   color: var(--fg);
   font-family: var(--font-head);
   font-weight: 600;
@@ -33,7 +28,7 @@
 }
 
 .btn:hover {
-  background: var(--bg-deep);
+  background: var(--bg-dim);
 }
 
 .btn:focus-visible {
@@ -44,27 +39,26 @@
 .btn[disabled],
 .btn[aria-disabled='true'] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .btn-primary {
   background: var(--accent);
   color: var(--c-bone);
-  border-color: var(--accent);
 }
 .btn-primary:hover {
   background: var(--accent-dark);
-  border-color: var(--accent-dark);
 }
 
 .btn-ghost {
-  background: transparent;
-  border-color: var(--fg-dim);
+  background: color-mix(in oklab, var(--fg) 5%, transparent);
   color: var(--fg-dim);
 }
 .btn-ghost:hover {
-  background: var(--bg-dim);
   color: var(--fg);
+  background: color-mix(in oklab, var(--fg) 10%, transparent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ------------------------------ inputs ------------------------------------ */
@@ -85,12 +79,14 @@
   color: var(--fg-dim);
 }
 
+/* Underline-only inputs — raw ledger blanks with faint wash */
 .input,
 .textarea {
   min-height: var(--tap-min);
-  padding: var(--s-2) var(--s-3);
-  border: var(--stroke) solid var(--ink-line);
-  background: var(--bg);
+  padding: var(--s-2);
+  border: 0;
+  border-bottom: var(--stroke) solid var(--ink-line);
+  background: color-mix(in oklab, var(--fg) 3%, transparent);
   color: var(--fg);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -103,15 +99,19 @@
   min-height: calc(var(--tap-min) * 2.5);
   resize: vertical;
   line-height: 1.5;
+  padding: var(--s-2);
+  border: 0;
+  border-bottom: var(--stroke) solid var(--ink-line);
+  background: color-mix(in oklab, var(--fg) 3%, transparent);
 }
 
 .input:focus,
 .textarea:focus,
 .input:focus-visible,
 .textarea:focus-visible {
-  border-color: var(--accent);
-  outline: var(--ring) solid var(--accent);
-  outline-offset: -1px;
+  border-color: var(--accent-bright);
+  background: color-mix(in oklab, var(--fg) 6%, transparent);
+  outline: none;
 }
 
 .input-inline {
@@ -136,7 +136,7 @@
   letter-spacing: 0.12em;
   color: var(--c-bone);
   background: var(--fg-dim);
-  border: var(--stroke-thin) solid var(--fg);
+  border: 0;
   border-radius: 0;
   white-space: nowrap;
 }
@@ -150,9 +150,9 @@
 
 /* ------------------------------ panels ------------------------------------ */
 
+/* No box border, no inner frame. The blood banner is the only separator. */
 .panel {
   background: var(--bg-dim);
-  border: var(--stroke-heavy) solid var(--ink-line);
   padding: var(--s-5);
   position: relative;
 }
@@ -162,16 +162,27 @@
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) var(--s-4);
   padding: var(--s-2) var(--s-5);
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--c-bone);
   letter-spacing: 0.03em;
+  position: relative;
+  z-index: 1;
 }
 
-/* ------------------------------ number steppers --------------------------- */
-/* Stepper visuals are owned by /components/Stepper.svelte. Nothing global. */
+/* Punk imperfection: panel heads tilt and drift by position */
+.panel:nth-of-type(3n+1) > .panel-head {
+  transform: rotate(-0.6deg) translateY(-1px);
+}
+.panel:nth-of-type(3n+2) > .panel-head {
+  transform: rotate(0.4deg) translateY(-2px);
+}
+.panel:nth-of-type(3n) > .panel-head {
+  transform: rotate(-0.2deg) translateY(1px);
+}
 
 /* ------------------------------ wax-seal presence tag --------------------- */
 
+/* Flat, no 3D depth. Just the rough shape and solid fill. */
 .seal {
   display: inline-flex;
   align-items: center;
@@ -181,16 +192,16 @@
   padding: 0 var(--s-3);
   background: var(--accent);
   color: var(--c-bone);
-  border: var(--stroke) solid var(--accent-dark);
+  border: 0;
   font-family: var(--font-head);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  /* Rough hexagonal-ish wax-seal shape: use clip-path to cut the corners. */
   clip-path: polygon(
     0 10%, 10% 0, 90% 0, 100% 10%,
     100% 90%, 90% 100%, 10% 100%, 0 90%
   );
+  position: relative;
 }
 
 /* ------------------------------ ornamental divider ------------------------ */
@@ -199,13 +210,14 @@
   display: block;
   border: 0;
   width: 100%;
-  height: 24px;
+  height: 40px;
   margin: var(--s-6) 0;
   background-image: url('/glyphs/divider.svg');
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
-  opacity: 0.7;
+  background-size: auto 36px;
+  color: var(--fg);
+  opacity: 1;
 }
 
 /* ------------------------------ connection banner ------------------------- */
@@ -222,25 +234,32 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
   text-align: center;
-  border-bottom: var(--stroke) solid var(--accent-dark);
 }
 
-/* ------------------------------ toast ------------------------------------- */
+/* ------------------------------ toast — stamped notice style -------------- */
 
 .toast {
-  position: fixed;
-  bottom: var(--s-6);
-  left: 50%;
-  transform: translateX(-50%);
   padding: var(--s-3) var(--s-5);
-  background: var(--fg);
-  color: var(--bg);
-  border: var(--stroke-heavy) solid var(--accent-dark);
-  font-family: var(--font-head);
-  letter-spacing: 0.08em;
+  background: var(--accent);
+  color: var(--c-bone);
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  z-index: 40;
-  pointer-events: none;
+  font-size: 0.85rem;
+  text-align: center;
+  animation: toast-in 180ms ease-out;
+}
+.toast[data-tone='grim'] {
+  background: var(--bg-deep);
+  color: var(--accent-bright);
+}
+.toast[data-tone='ok'] {
+  background: var(--c-status-allied);
+  color: var(--c-bone);
+}
+@keyframes toast-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* ------------------------------ utilities --------------------------------- */

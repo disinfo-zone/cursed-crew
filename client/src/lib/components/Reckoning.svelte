@@ -232,15 +232,15 @@
   .faction-name {
     background: transparent;
     border: 0;
-    border-bottom: var(--stroke-thin) dashed currentColor;
-    padding: var(--s-1) 0;
+    border-bottom: var(--stroke-thin) solid currentColor;
+    padding: var(--s-1) var(--s-2);
     font-family: var(--font-head);
     font-size: 1.05rem;
     letter-spacing: 0.03em;
     color: var(--fg);
     min-width: 0;
   }
-  .faction-name:focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--accent); }
+  .faction-name:focus { outline: none; border-bottom-color: var(--accent); }
 
   .sub-row {
     display: grid;
@@ -264,14 +264,14 @@
   .faction-note {
     background: transparent;
     border: 0;
-    border-bottom: var(--stroke-thin) dotted var(--fg-dim);
-    padding: var(--s-1) 0;
+    border-bottom: var(--stroke-thin) solid var(--fg-dim);
+    padding: var(--s-1) var(--s-2);
     font-family: var(--font-body);
     color: var(--fg-dim);
     font-size: 0.9rem;
     min-width: 0;
   }
-  .faction-note:focus { outline: none; border-bottom-color: var(--accent); border-bottom-style: solid; color: var(--fg); }
+  .faction-note:focus { outline: none; border-bottom-color: var(--accent); color: var(--fg); }
   .faction[data-status='kos'] .faction-note { color: var(--c-bone); border-bottom-color: var(--c-parchment-deep); }
 
   /* ── Select (color-coded to match status) ─────────────────────────── */
@@ -279,7 +279,7 @@
     width: 100%;
     min-height: var(--tap-min);
     padding: var(--s-2) var(--s-8) var(--s-2) var(--s-3);
-    border: var(--stroke) solid var(--ink-line);
+    border: 0;
     background: var(--bg);
     color: var(--fg);
     font-family: var(--font-head);
@@ -297,13 +297,14 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+    outline: none;
   }
-  .status-select[data-status='allied']   { background-color: var(--c-status-allied);   color: var(--c-bone); border-color: var(--c-status-allied); }
-  .status-select[data-status='friendly'] { background-color: var(--c-status-friendly); color: var(--c-bone); border-color: var(--c-status-friendly); }
-  .status-select[data-status='neutral']  { background-color: var(--c-status-neutral);  color: var(--c-bone); border-color: var(--c-status-neutral); }
-  .status-select[data-status='watched']  { background-color: var(--c-status-watched);  color: var(--c-bone); border-color: var(--c-status-watched); }
-  .status-select[data-status='wanted']   { background-color: var(--c-status-wanted);   color: var(--c-bone); border-color: var(--c-status-wanted); }
-  .status-select[data-status='kos']      { background-color: var(--c-status-kos);      color: var(--c-bone); border-color: var(--c-status-kos); }
+  .status-select[data-status='allied']   { background-color: var(--c-status-allied);   color: var(--c-bone); }
+  .status-select[data-status='friendly'] { background-color: var(--c-status-friendly); color: var(--c-bone); }
+  .status-select[data-status='neutral']  { background-color: var(--c-status-neutral);  color: var(--c-bone); }
+  .status-select[data-status='watched']  { background-color: var(--c-status-watched);  color: var(--c-bone); }
+  .status-select[data-status='wanted']   { background-color: var(--c-status-wanted);   color: var(--c-bone); }
+  .status-select[data-status='kos']      { background-color: var(--c-status-kos);      color: var(--c-bone); }
   .status-select:focus { outline: var(--ring) solid var(--accent-bright); outline-offset: 2px; }
 
   /* ── Remove + Add ─────────────────────────────────────────────────── */
@@ -311,11 +312,11 @@
     width: 36px; height: 36px; line-height: 1;
     font-family: var(--font-mono); font-size: 1.1rem;
     background: transparent; color: var(--fg-dim);
-    border: var(--stroke-thin) solid var(--fg-dim); cursor: pointer;
+    border: 0; cursor: pointer;
     flex-shrink: 0;
   }
-  .faction[data-status='kos'] .row-remove { color: var(--c-bone); border-color: var(--c-parchment-deep); }
-  .row-remove:hover { background: var(--accent); color: var(--c-bone); border-color: var(--accent); }
+  .faction[data-status='kos'] .row-remove { color: var(--c-bone); }
+  .row-remove:hover { color: var(--accent-bright); }
 
   .add-faction {
     display: grid;

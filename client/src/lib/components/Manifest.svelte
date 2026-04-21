@@ -1,556 +1,370 @@
 <script lang="ts">
-  import type { CrewSession } from '$lib/ws-session.svelte';
-  import type { CargoItem, Relic, RelicStatus } from '$lib/shared/types';
+  import type { CrewData } from '$lib/shared/types';
+  function genId() {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  }
   import Stepper from './Stepper.svelte';
 
-  type Props = { session: CrewSession };
-  let { session }: Props = $props();
 
-  const manifest = $derived(session.data?.manifest);
-  const ship = $derived(session.data?.ship);
-  const cargoUsed = $derived(manifest?.cargo.reduce((n, c) => n + c.slots, 0) ?? 0);
-  const cargoMax = $derived(ship?.cargoMax ?? 0);
-  const overCapacity = $derived(cargoUsed > cargoMax);
+  type Props = {
+    ledger: CrewData;
+    allowEdit: boolean;
+    dispatch: (a: any) => void;
+  };
+  let { ledger, allowEdit, dispatch }: Props = $props();
 
-  // Doubloons
-  let doubloonsDraft = $state<string>('');
-  function commitDoubloons() {
-    const n = parseInt(doubloonsDraft, 10);
-    if (Number.isFinite(n) && n >= 0) {
-      session.dispatch({ kind: 'doubloons.set', value: n });
-    }
-    doubloonsDraft = '';
+  const m = $derived(ledger.manifest);
+
+  let doubloonEdit = $state(false);
+  let doubloonDraft = $state(0);
+  let doubloonRef: HTMLInputElement | null = $state(null);
+
+  function setDoubloons(n: number) {
+    dispatch({ kind: 'doubloons.set', value: Math.max(0, Math.min(999999, n)) });
   }
-  function setDoubloons(v: number) {
-    session.dispatch({ kind: 'doubloons.set', value: v });
+  function updateCargo(id: string, fields: Partial<CrewData['manifest']['cargo'][number]>) {
+    dispatch({ kind: 'cargo.update', id, fields });
   }
-
-  // Cargo
-  let cargoName = $state('');
-  let cargoSlots = $state(1);
-  let cargoNotes = $state('');
+  function removeCargo(id: string) {
+    dispatch({ kind: 'cargo.remove', id });
+  }
   function addCargo() {
-    const name = cargoName.trim();
-    if (!name) return;
-    session.dispatch({
+    dispatch({
       kind: 'cargo.add',
-      id: crypto.randomUUID(),
-      item: { name, slots: cargoSlots, notes: cargoNotes.trim() }
-    });
-    cargoName = '';
-    cargoSlots = 1;
-    cargoNotes = '';
-  }
-  function updateCargo<K extends keyof CargoItem>(id: string, field: K, value: CargoItem[K]) {
-    session.dispatch({
-      kind: 'cargo.update',
-      id,
-      fields: { [field]: value } as Partial<CargoItem>
+      id: genId(),
+      item: { name: 'New Cargo', slots: 1, notes: '' }
     });
   }
-
-  // Relics
-  let relicName = $state('');
-  let relicDesc = $state('');
-  let relicUses = $state<string>('');
+  function updateRelic(id: string, fields: Partial<CrewData['manifest']['relics'][number]>) {
+    dispatch({ kind: 'relic.update', id, fields });
+  }
+  function removeRelic(id: string) {
+    dispatch({ kind: 'relic.remove', id });
+  }
   function addRelic() {
-    const name = relicName.trim();
-    if (!name) return;
-    const rawUses = relicUses.trim();
-    const uses = rawUses === '' ? null : parseInt(rawUses, 10);
-    session.dispatch({
+    dispatch({
       kind: 'relic.add',
-      id: crypto.randomUUID(),
+      id: genId(),
       relic: {
-        name,
-        description: relicDesc.trim(),
-        usesLeft: rawUses === '' ? null : (Number.isFinite(uses as number) ? (uses as number) : null),
+        name: 'Unnamed Relic',
+        description: '',
+        usesLeft: 1,
         status: 'active'
       }
     });
-    relicName = '';
-    relicDesc = '';
-    relicUses = '';
   }
-  function updateRelic<K extends keyof Relic>(id: string, field: K, value: Relic[K]) {
-    session.dispatch({
-      kind: 'relic.update',
-      id,
-      fields: { [field]: value } as Partial<Relic>
-    });
-  }
-  const RELIC_STATUSES: RelicStatus[] = ['active', 'depleted', 'destroyed'];
 
-  const cargoTextTimers = new Map<string, ReturnType<typeof setTimeout>>();
-  function debounceCargoText(id: string, field: 'name' | 'notes', value: string) {
-    const key = `${id}:${field}`;
-    const t = cargoTextTimers.get(key);
-    if (t) clearTimeout(t);
-    cargoTextTimers.set(
-      key,
-      setTimeout(() => updateCargo(id, field, value), 450)
-    );
+  function cargoUsed() {
+    return m.cargo.reduce((s, c) => s + c.slots, 0);
   }
-  const relicTextTimers = new Map<string, ReturnType<typeof setTimeout>>();
-  function debounceRelicText(id: string, field: 'name' | 'description', value: string) {
-    const key = `${id}:${field}`;
-    const t = relicTextTimers.get(key);
-    if (t) clearTimeout(t);
-    relicTextTimers.set(
-      key,
-      setTimeout(() => updateRelic(id, field, value), 450)
-    );
+  function isCargoOver() {
+    return cargoUsed() > ledger.ship.cargoMax;
+  }
+
+  function startDoubloonEdit() {
+    if (!allowEdit) return;
+    doubloonEdit = true;
+    doubloonDraft = m.doubloons;
+    requestAnimationFrame(() => doubloonRef?.focus());
+  }
+  function commitDoubloonEdit() {
+    setDoubloons(doubloonDraft);
+    doubloonEdit = false;
+  }
+  function onDoubloonKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') commitDoubloonEdit();
+    if (e.key === 'Escape') doubloonEdit = false;
   }
 </script>
 
-{#if manifest}
-  <section class="panel manifest" aria-labelledby="manifest-h">
-    <h2 id="manifest-h" class="panel-head">The Manifest</h2>
+<section class="panel" aria-labelledby="manifest-head">
+  <h2 class="panel-head" id="manifest-head">Manifest</h2>
 
-    <!-- Doubloons -->
-    <section class="doubloons">
-      <div class="doub-head">
-        <span class="field-label">Doubloons</span>
-        <span class="doub-value stat">{manifest.doubloons.toLocaleString()}</span>
-      </div>
-      <div class="doub-steppers">
-        <Stepper
-          value={manifest.doubloons}
-          min={0}
-          max={999_999_999}
-          fastStep={10}
-          label="Doubloons"
-          onChange={setDoubloons}
-        />
-      </div>
-      <div class="doub-set">
-        <label class="field-label" for="doub-exact">Set exact</label>
-        <input
-          id="doub-exact"
-          class="input"
-          type="number"
-          min="0"
-          max="999999999"
-          bind:value={doubloonsDraft}
-          placeholder="any number"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitDoubloons(); } }}
-        />
-        <button type="button" class="btn" onclick={commitDoubloons} disabled={doubloonsDraft.trim() === ''}>Set</button>
-      </div>
-    </section>
+  <!-- ═══════════════ DOUBLOONS ═══════════════ -->
+  <div class="doubloon-block">
+    <span class="doub-label">Doubloons</span>
+    {#if doubloonEdit}
+      <input
+        bind:this={doubloonRef}
+        class="doub-input"
+        type="number"
+        min="0"
+        bind:value={doubloonDraft}
+        onblur={commitDoubloonEdit}
+        onkeydown={onDoubloonKey}
+      />
+    {:else}
+      <button
+        type="button"
+        class="doub-value"
+        onclick={startDoubloonEdit}
+        disabled={!allowEdit}
+        aria-label="Edit Doubloons"
+        title="Click to edit"
+      >{m.doubloons}</button>
+    {/if}
+    <Stepper label="Doubloons" min={0} max={999999} step={1} fastStep={10}
+      value={m.doubloons}
+      onChange={setDoubloons}
+      disabled={!allowEdit}
+      hideValue />
+  </div>
 
-    <hr class="rule" aria-hidden="true" />
+  <!-- ═══════════════ CARGO ═══════════════ -->
+  <hr class="rule" />
 
-    <!-- Cargo -->
-    <section class="cargo">
-      <div class="subhead">
-        <h3>Cargo</h3>
-        <span class="slots" class:over={overCapacity}>
-          <span class="stat">{cargoUsed}</span>
-          <span class="muted">/ {cargoMax}</span> slots
-        </span>
-      </div>
-      {#if overCapacity}
-        <p class="warn">The hold is straining. She'll sail slow and heavy.</p>
-      {/if}
-
-      {#if manifest.cargo.length > 0}
-        <ul class="cargo-list">
-          {#each manifest.cargo as item (item.id)}
-            <li>
-              <input
-                class="input cargo-name"
-                type="text"
-                maxlength="80"
-                value={item.name}
-                oninput={(e) => debounceCargoText(item.id, 'name', (e.currentTarget as HTMLInputElement).value)}
-                onblur={(e) => updateCargo(item.id, 'name', (e.currentTarget as HTMLInputElement).value)}
-                aria-label="Cargo name"
-              />
-              <div class="cargo-slots-stepper">
-                <Stepper
-                  value={item.slots}
-                  min={0}
-                  max={99}
-                  label="slots"
-                  onChange={(v) => updateCargo(item.id, 'slots', v)}
-                  compact
-                />
-                <span class="slot-label">slots</span>
-              </div>
-              <input
-                class="input cargo-notes"
-                type="text"
-                maxlength="200"
-                value={item.notes}
-                oninput={(e) => debounceCargoText(item.id, 'notes', (e.currentTarget as HTMLInputElement).value)}
-                onblur={(e) => updateCargo(item.id, 'notes', (e.currentTarget as HTMLInputElement).value)}
-                placeholder="notes (origin, buyer…)"
-                aria-label="Cargo notes"
-              />
-              <button
-                type="button"
-                class="row-remove"
-                aria-label="Remove cargo {item.name}"
-                onclick={() => session.dispatch({ kind: 'cargo.remove', id: item.id })}
-              >×</button>
-            </li>
-          {/each}
-        </ul>
-      {:else}
-        <p class="muted">The hold is empty.</p>
-      {/if}
-
-      <div class="cargo-add">
-        <input
-          class="input"
-          type="text"
-          maxlength="80"
-          bind:value={cargoName}
-          placeholder="rum barrels, sugar, stolen silks…"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCargo(); } }}
-        />
-        <div class="add-slots">
-          <span class="field-label tiny">slots</span>
-          <Stepper
-            value={cargoSlots}
-            min={0}
-            max={99}
-            label="slots"
-            onChange={(v) => (cargoSlots = v)}
-            compact
+  <div class="section-head">
+    <h3 class="section-title">Cargo</h3>
+    <span class="cargo-meta" class:over={isCargoOver()}>
+      {cargoUsed()} / {ledger.ship.cargoMax} slots
+    </span>
+    <button type="button" class="btn btn-sm" onclick={addCargo} disabled={!allowEdit}>
+      Add Cargo
+    </button>
+  </div>
+  <div class="cargo-grid">
+    {#each m.cargo as c (c.id)}
+      <div class="cargo-card">
+        <div class="cargo-top">
+          <input
+            class="cargo-name"
+            type="text"
+            disabled={!allowEdit}
+            value={c.name}
+            onchange={(e) => updateCargo(c.id, { name: e.currentTarget.value })}
           />
+          <button
+            type="button"
+            class="cargo-remove"
+            aria-label="Remove cargo"
+            onclick={() => removeCargo(c.id)}
+            disabled={!allowEdit}
+          >×</button>
         </div>
-        <input
-          class="input"
-          type="text"
-          maxlength="200"
-          bind:value={cargoNotes}
-          placeholder="notes (optional)"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCargo(); } }}
-        />
-        <button type="button" class="btn" onclick={addCargo} disabled={cargoName.trim() === ''}>Load</button>
+        <div class="cargo-row">
+          <span class="cargo-label">Slots</span>
+          <Stepper label="Slots" min={1} max={999} step={1}
+            value={c.slots}
+            onChange={(v) => updateCargo(c.id, { slots: v })}
+            disabled={!allowEdit} compact />
+        </div>
+        <textarea
+          class="cargo-notes"
+          disabled={!allowEdit}
+          rows={2}
+          value={c.notes}
+          onchange={(e) => updateCargo(c.id, { notes: e.currentTarget.value })}
+        ></textarea>
       </div>
-    </section>
+    {/each}
+  </div>
 
-    <hr class="rule" aria-hidden="true" />
+  <!-- ═══════════════ RELICS ═══════════════ -->
+  <hr class="rule" />
 
-    <!-- Relics -->
-    <section class="relics">
-      <div class="subhead">
-        <h3>Relics</h3>
+  <div class="section-head">
+    <h3 class="section-title">Relics</h3>
+    <button type="button" class="btn btn-sm" onclick={addRelic} disabled={!allowEdit}>
+      Add Relic
+    </button>
+  </div>
+  <div class="relic-grid">
+    {#each m.relics as r (r.id)}
+      <div class="relic-card" data-status={r.status}>
+        <div class="relic-top">
+          <input
+            class="relic-name"
+            type="text"
+            disabled={!allowEdit}
+            value={r.name}
+            onchange={(e) => updateRelic(r.id, { name: e.currentTarget.value })}
+          />
+          <button
+            type="button"
+            class="relic-remove"
+            aria-label="Remove relic"
+            onclick={() => removeRelic(r.id)}
+            disabled={!allowEdit}
+          >×</button>
+        </div>
+        <div class="relic-row">
+          <span class="relic-label">Charges</span>
+          {#if r.usesLeft === null}
+            <span class="relic-infinite">∞</span>
+          {:else}
+            <Stepper label="Charges" min={0} max={10} step={1}
+              value={r.usesLeft}
+              onChange={(v) => updateRelic(r.id, { usesLeft: v })}
+              disabled={!allowEdit} compact />
+          {/if}
+          <label class="relic-toggle">
+            <input
+              type="checkbox"
+              disabled={!allowEdit}
+              checked={r.usesLeft === null}
+              onchange={(e) => updateRelic(r.id, {
+                usesLeft: e.currentTarget.checked ? null : 1
+              })}
+            />
+            <span>∞</span>
+          </label>
+          <button
+            type="button"
+            class="relic-status"
+            data-status={r.status}
+            onclick={() => {
+              const cycle = r.status === 'active' ? 'depleted' : r.status === 'depleted' ? 'destroyed' : 'active';
+              updateRelic(r.id, { status: cycle });
+            }}
+            disabled={!allowEdit}
+          >{r.status}</button>
+        </div>
+        <textarea
+          class="relic-notes"
+          disabled={!allowEdit}
+          rows={2}
+          value={r.description}
+          onchange={(e) => updateRelic(r.id, { description: e.currentTarget.value })}
+        ></textarea>
       </div>
-
-      {#if manifest.relics.length > 0}
-        <ul class="relic-list">
-          {#each manifest.relics as relic (relic.id)}
-            <li class="relic-card" data-status={relic.status}>
-              <div class="relic-top">
-                <input
-                  class="input relic-name"
-                  type="text"
-                  maxlength="80"
-                  value={relic.name}
-                  oninput={(e) => debounceRelicText(relic.id, 'name', (e.currentTarget as HTMLInputElement).value)}
-                  onblur={(e) => updateRelic(relic.id, 'name', (e.currentTarget as HTMLInputElement).value)}
-                  aria-label="Relic name"
-                />
-                <button
-                  type="button"
-                  class="row-remove"
-                  aria-label="Remove relic {relic.name}"
-                  onclick={() => session.dispatch({ kind: 'relic.remove', id: relic.id })}
-                >×</button>
-              </div>
-
-              <textarea
-                class="textarea relic-desc"
-                maxlength="8000"
-                value={relic.description}
-                oninput={(e) => debounceRelicText(relic.id, 'description', (e.currentTarget as HTMLTextAreaElement).value)}
-                onblur={(e) => updateRelic(relic.id, 'description', (e.currentTarget as HTMLTextAreaElement).value)}
-                placeholder="What it does, what it demands, what it whispers…"
-              ></textarea>
-
-              <div class="relic-foot">
-                <div class="uses-pair">
-                  <span class="field-label tiny">Uses</span>
-                  <Stepper
-                    value={relic.usesLeft ?? 0}
-                    min={-1}
-                    max={999}
-                    label="Uses left"
-                    onChange={(v) => updateRelic(relic.id, 'usesLeft', v)}
-                    compact
-                  />
-                  <button
-                    type="button"
-                    class="uses-infinite"
-                    class:on={relic.usesLeft === null}
-                    onclick={() => updateRelic(relic.id, 'usesLeft', relic.usesLeft === null ? 0 : null)}
-                    aria-pressed={relic.usesLeft === null}
-                  >∞</button>
-                </div>
-                <div class="status-group">
-                  <select
-                    class="relic-status-select"
-                    value={relic.status}
-                    data-status={relic.status}
-                    onchange={(e) => updateRelic(relic.id, 'status', (e.currentTarget as HTMLSelectElement).value as RelicStatus)}
-                    aria-label="Relic status"
-                  >
-                    {#each RELIC_STATUSES as s (s)}
-                      <option value={s}>{s}</option>
-                    {/each}
-                  </select>
-                </div>
-              </div>
-            </li>
-          {/each}
-        </ul>
-      {:else}
-        <p class="muted">No relics taken yet. The sea is generous; the cost is steeper.</p>
-      {/if}
-
-      <div class="relic-add">
-        <input
-          class="input"
-          type="text"
-          maxlength="80"
-          bind:value={relicName}
-          placeholder="Ashen Compass, The Drowning Eye…"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRelic(); } }}
-        />
-        <input
-          class="input"
-          type="text"
-          maxlength="200"
-          bind:value={relicDesc}
-          placeholder="description (optional)"
-        />
-        <input
-          class="input uses-input"
-          type="number"
-          min="-1"
-          max="999"
-          bind:value={relicUses}
-          placeholder="uses"
-          aria-label="Relic uses"
-        />
-        <button type="button" class="btn" onclick={addRelic} disabled={relicName.trim() === ''}>Claim</button>
-      </div>
-    </section>
-  </section>
-{/if}
+    {/each}
+  </div>
+</section>
 
 <style>
-  .doubloons {
+  .section-head { display:flex; align-items:center; gap:var(--s-3); flex-wrap:wrap; margin-bottom:var(--s-4); }
+  .section-title { font-family:var(--font-display); font-size:clamp(1.2rem, 2.5vw, 1.6rem); margin:0; letter-spacing:0.02em; }
+  .cargo-meta { font-family:var(--font-mono); font-size:0.9rem; color:var(--fg-mute); }
+  .cargo-meta.over { color: var(--accent-bright); }
+
+  /* Doubloon block: inline-editable total */
+  .doubloon-block {
     display: flex;
-    flex-direction: column;
-    gap: var(--s-3);
-  }
-  .doub-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--s-3);
+    align-items: center;
+    gap: var(--s-4);
     flex-wrap: wrap;
+    padding: var(--s-4) 0;
+  }
+  .doub-label {
+    font-family: var(--font-head);
+    font-size: 0.9rem;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
   .doub-value {
     font-family: var(--font-mono);
-    font-size: clamp(1.75rem, 5vw, 2.75rem);
-    color: var(--brass);
-  }
-  .doub-steppers {
-    display: flex;
-    justify-content: center;
-  }
-  .doub-set {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: var(--s-2);
-    align-items: center;
-  }
-  @media (max-width: 420px) {
-    .doub-set {
-      grid-template-columns: 1fr;
-    }
-    .doub-set label { margin-bottom: calc(-1 * var(--s-1)); }
-  }
-  .doub-set input { width: 100%; min-width: 0; }
-
-  .subhead {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin: var(--s-3) 0;
-    gap: var(--s-2);
-    flex-wrap: wrap;
-  }
-  .subhead h3 {
-    font-family: var(--font-head);
-    font-size: 1rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .slots { font-family: var(--font-body); font-size: 0.9rem; color: var(--fg-dim); }
-  .slots.over { color: var(--accent-bright); }
-  .warn {
-    padding: var(--s-2) var(--s-3);
-    border-left: var(--stroke-heavy) solid var(--accent);
-    color: var(--fg-dim); font-style: italic;
-  }
-  .muted { color: var(--fg-dim); font-style: italic; margin: 0; }
-
-  .cargo-list, .relic-list {
-    list-style: none; margin: 0; padding: 0;
-    display: flex; flex-direction: column; gap: var(--s-2);
-  }
-  .cargo-list li {
-    display: grid;
-    grid-template-columns: minmax(8rem, 1.4fr) auto minmax(8rem, 2fr) auto;
-    gap: var(--s-2);
-    padding: var(--s-2);
-    border: var(--stroke) solid var(--ink-line);
-    background: var(--bg);
-    align-items: center;
-  }
-  @media (max-width: 720px) {
-    .cargo-list li {
-      grid-template-columns: 1fr auto;
-      grid-template-areas:
-        "name    remove"
-        "slots   slots"
-        "notes   notes";
-    }
-    .cargo-list .cargo-name  { grid-area: name; }
-    .cargo-list .cargo-slots-stepper { grid-area: slots; justify-self: start; }
-    .cargo-list .cargo-notes { grid-area: notes; }
-    .cargo-list .row-remove  { grid-area: remove; }
-  }
-  .cargo-slots-stepper { display: inline-flex; align-items: center; gap: var(--s-1); }
-  .slot-label { font-family: var(--font-head); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-dim); }
-
-  .cargo-add {
-    margin-top: var(--s-3);
-    display: grid;
-    grid-template-columns: minmax(10rem, 2fr) auto minmax(10rem, 2fr) auto;
-    gap: var(--s-2);
-    align-items: center;
-  }
-  @media (max-width: 720px) {
-    .cargo-add {
-      grid-template-columns: 1fr 1fr;
-      grid-template-areas:
-        "name      name"
-        "slots     slots"
-        "notes     notes"
-        "submit    submit";
-    }
-    .cargo-add > input:nth-child(1) { grid-area: name; }
-    .cargo-add .add-slots            { grid-area: slots; justify-self: start; }
-    .cargo-add > input:nth-child(3) { grid-area: notes; }
-    .cargo-add > button              { grid-area: submit; justify-self: stretch; }
-  }
-  .add-slots { display: inline-flex; align-items: center; gap: var(--s-1); }
-  .tiny { font-size: 0.65rem; letter-spacing: 0.1em; }
-
-  .relic-add {
-    margin-top: var(--s-3);
-    display: grid;
-    grid-template-columns: minmax(10rem, 1.4fr) minmax(10rem, 2fr) 5rem auto;
-    gap: var(--s-2);
-  }
-  @media (max-width: 720px) {
-    .relic-add {
-      grid-template-columns: 1fr 5rem;
-      grid-template-areas:
-        "name    name"
-        "desc    desc"
-        "uses    submit";
-    }
-    .relic-add > input:nth-child(1) { grid-area: name; }
-    .relic-add > input:nth-child(2) { grid-area: desc; }
-    .relic-add .uses-input          { grid-area: uses; }
-    .relic-add > button             { grid-area: submit; }
-  }
-  .uses-input { min-width: 0; }
-
-  .row-remove {
-    width: 32px; height: 32px; line-height: 1;
-    font-family: var(--font-mono); font-size: 1.1rem;
-    background: transparent; color: var(--fg-dim);
-    border: var(--stroke-thin) solid var(--fg-dim); cursor: pointer;
-    flex-shrink: 0;
-  }
-  .row-remove:hover { background: var(--accent); color: var(--c-bone); border-color: var(--accent); }
-
-  /* Relics */
-  .relic-card {
-    padding: var(--s-3);
-    background: var(--bg);
-    border-left: 6px solid var(--accent);
-    display: flex; flex-direction: column; gap: var(--s-2);
-  }
-  .relic-card[data-status='active']    { border-left-color: var(--c-status-allied); }
-  .relic-card[data-status='depleted']  { border-left-color: var(--c-status-watched); }
-  .relic-card[data-status='destroyed'] { border-left-color: var(--c-status-kos); opacity: 0.7; }
-  .relic-card[data-status='destroyed'] .relic-name,
-  .relic-card[data-status='destroyed'] .relic-desc {
-    text-decoration: line-through;
-    text-decoration-color: var(--accent-dark);
-  }
-
-  .relic-top {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: var(--s-2);
-    align-items: center;
-  }
-  .relic-name {
-    font-family: var(--font-head);
-    font-size: 1rem;
-    letter-spacing: 0.06em;
-  }
-  .relic-desc { min-height: 4rem; }
-
-  .relic-foot {
-    display: flex;
-    gap: var(--s-3);
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  .uses-pair { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
-  .uses-infinite {
-    min-width: 32px; min-height: 32px;
-    font-family: var(--font-mono); font-size: 1.1rem;
-    background: transparent; color: var(--fg-dim);
-    border: var(--stroke-thin) solid var(--fg-dim); cursor: pointer;
-  }
-  .uses-infinite.on {
-    background: var(--accent); color: var(--c-bone); border-color: var(--accent);
-  }
-  .status-group { display: inline-flex; }
-  .relic-status-select {
-    min-height: 32px;
-    padding: 0 var(--s-6) 0 var(--s-3);
-    border: var(--stroke) solid var(--ink-line);
-    background: var(--bg);
+    font-size: 2rem;
+    line-height: 1;
     color: var(--fg);
-    font-family: var(--font-head);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    border-radius: 0;
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
+    border: 0;
+    padding: var(--s-1) var(--s-2);
     cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='%23EFE3C8' stroke-width='1.5' fill='none'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right var(--s-2) center;
+    min-width: 4ch;
+    text-align: center;
+    border-radius: 0;
   }
-  .relic-status-select[data-status='active']    { background-color: var(--c-status-allied); color: var(--c-bone); border-color: var(--c-status-allied); }
-  .relic-status-select[data-status='depleted']  { background-color: var(--c-status-watched); color: var(--c-bone); border-color: var(--c-status-watched); }
-  .relic-status-select[data-status='destroyed'] { background-color: var(--c-status-kos); color: var(--c-bone); border-color: var(--c-status-kos); }
+  .doub-value:hover:not([disabled]) {
+    background: color-mix(in oklab, var(--accent-bright) 10%, transparent);
+    color: var(--accent-bright);
+  }
+  .doub-value[disabled] {
+    cursor: default;
+    opacity: 0.6;
+  }
+  .doub-input {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--fg);
+    background: color-mix(in oklab, var(--accent-bright) 10%, transparent);
+    border: 0;
+    padding: var(--s-1) var(--s-2);
+    min-width: 4ch;
+    text-align: center;
+    border-radius: 0;
+    outline: none;
+    width: 6ch;
+  }
+  .doub-input:focus-visible {
+    background: color-mix(in oklab, var(--accent-bright) 18%, transparent);
+    outline: none;
+  }
+
+  .cargo-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); margin-bottom:var(--s-5); }
+  @media (min-width: 640px) { .cargo-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (min-width: 1024px) { .cargo-grid { grid-template-columns:repeat(3,1fr); } }
+
+  .cargo-card {
+    background: var(--bg);
+    padding: var(--s-4);
+    position: relative;
+  }
+  .cargo-card:nth-child(odd) { transform: rotate(-0.25deg); }
+  .cargo-card:nth-child(even) { transform: rotate(0.15deg); }
+  .cargo-top { display:flex; align-items:center; gap:var(--s-2); margin-bottom:var(--s-3); }
+  .cargo-name { flex:1; font-family:var(--font-body); font-size:1rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-1) var(--s-2); outline:none; color:var(--fg); min-width:0; }
+  .cargo-name:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
+  .cargo-remove { width:32px; height:32px; display:inline-grid; place-content:center; background:transparent; border:0; color:var(--fg-dim); font-size:1.25rem; cursor:pointer; line-height:1; border-radius:0; }
+  .cargo-remove:hover { color:var(--accent-bright); }
+  .cargo-row { display:flex; align-items:center; gap:var(--s-3); margin-bottom:var(--s-2); }
+  .cargo-label { font-family:var(--font-head); font-size:0.8rem; color:var(--fg-mute); text-transform:uppercase; letter-spacing:0.06em; }
+  .cargo-notes { width:100%; font-family:var(--font-body); font-size:0.9rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-2); outline:none; color:var(--fg); resize:vertical; margin-top:var(--s-2); }
+  .cargo-notes:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
+
+  .relic-grid { display:grid; grid-template-columns:1fr; gap:var(--s-4); }
+  @media (min-width: 640px) { .relic-grid { grid-template-columns:repeat(2,1fr); } }
+
+  .relic-card {
+    background: var(--bg);
+    padding: var(--s-4);
+    position: relative;
+  }
+  .relic-card:nth-child(odd) { transform: rotate(0.2deg); }
+  .relic-card:nth-child(even) { transform: rotate(-0.3deg); }
+  /* Accent bar on the left only — reads as a rule, not a box */
+  .relic-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: var(--s-2);
+    bottom: var(--s-2);
+    width: var(--stroke-heavy);
+    background: var(--accent);
+  }
+  .relic-card[data-status="depleted"]::before { background: #8B5A2B; }
+  .relic-card[data-status="destroyed"]::before { background: #555; }
+  .relic-top { display:flex; align-items:center; gap:var(--s-2); margin-bottom:var(--s-3); }
+  .relic-name { flex:1; font-family:var(--font-body); font-size:1rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-1) var(--s-2); outline:none; color:var(--fg); min-width:0; }
+  .relic-name:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
+  .relic-remove { width:32px; height:32px; display:inline-grid; place-content:center; background:transparent; border:0; color:var(--fg-dim); font-size:1.25rem; cursor:pointer; line-height:1; border-radius:0; }
+  .relic-remove:hover { color:var(--accent-bright); }
+  .relic-row { display:flex; align-items:center; gap:var(--s-3); flex-wrap:wrap; margin-bottom:var(--s-2); }
+  .relic-label { font-family:var(--font-head); font-size:0.8rem; color:var(--fg-mute); text-transform:uppercase; letter-spacing:0.06em; }
+  .relic-infinite { font-family:var(--font-mono); font-size:1.1rem; color:var(--fg-dim); padding:0 var(--s-2); }
+  .relic-toggle { display:inline-flex; align-items:center; gap:var(--s-1); cursor:pointer; font-family:var(--font-head); font-size:0.8rem; color:var(--fg-mute); text-transform:uppercase; letter-spacing:0.06em; }
+  .relic-toggle input[type="checkbox"] { appearance:none; -webkit-appearance:none; width:18px; height:18px; border:0; background:var(--bg-dim); display:inline-grid; place-content:center; cursor:pointer; border-radius:0; margin:0; }
+  .relic-toggle input[type="checkbox"]:checked { background:var(--accent); }
+  .relic-toggle input[type="checkbox"]:checked::after { content:"∞"; font-size:10px; color:var(--c-bone); display:block; line-height:1; }
+  .relic-toggle input[type="checkbox"]:focus-visible { outline:var(--ring) solid var(--accent-bright); outline-offset:2px; }
+  .relic-notes { width:100%; font-family:var(--font-body); font-size:0.9rem; background:color-mix(in oklab, var(--fg) 3%, transparent); border:0; border-bottom:var(--stroke) solid var(--ink-line); padding:var(--s-2); outline:none; color:var(--fg); resize:vertical; margin-top:var(--s-2); }
+  .relic-notes:focus-visible { border-bottom-color:var(--accent-bright); background:color-mix(in oklab, var(--fg) 6%, transparent); outline:none; }
+
+  .relic-status {
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px var(--s-2);
+    border: 0;
+    background: var(--bg-dim);
+    color: var(--fg);
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .relic-status[data-status='active'] { background: var(--c-status-allied); color: var(--c-bone); }
+  .relic-status[data-status='depleted'] { background: var(--c-status-watched); color: var(--c-bone); }
+  .relic-status[data-status='destroyed'] { background: var(--c-status-kos); color: var(--c-bone); }
+  .relic-status[disabled] { opacity: 0.5; cursor: not-allowed; }
 </style>

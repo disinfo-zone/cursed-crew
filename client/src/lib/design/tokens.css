@@ -70,6 +70,9 @@
   --accent-dark:   var(--c-blood-dark);
   --brass:         var(--c-brass);
   --ink-line:      var(--c-bone); /* color of borders & rules at baseline */
+
+  /* --- texture --- */
+  --grain-opacity: 0.10;
 }
 
 /* Explicit light mode (parchment-on-ink) */
@@ -85,6 +88,7 @@
   --accent-dark:   var(--c-blood-dark);
   --brass:         var(--c-brass-dim);
   --ink-line:      var(--c-ink);
+  --grain-opacity: 0.08;
 }
 
 /* Explicit dark mode (same as default, spelled out so the toggle can override
@@ -101,6 +105,7 @@
   --accent-dark:   var(--c-blood-dark);
   --brass:         var(--c-brass);
   --ink-line:      var(--c-bone);
+  --grain-opacity: 0.10;
 }
 
 /* If no explicit choice has been made, follow the OS preference. */
@@ -114,5 +119,6 @@
     --fg-mute:  color-mix(in oklab, var(--c-ink) 60%, var(--c-parchment));
     --brass:    var(--c-brass-dim);
     --ink-line: var(--c-ink);
+    --grain-opacity: 0.08;
   }
 }

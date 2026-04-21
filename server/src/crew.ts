@@ -13,12 +13,17 @@ const DEFAULT_SHIP: Ship = {
   maxHp: 8,
   hullTier: 'light',
   speed: 3,
+  agility: 2,
   skill: 0,
+  broadsides: 4,
+  smallArms: 2,
+  ram: 4,
   crewCount: 1,
   minCrew: 1,
   maxCrew: 6,
   cargoMax: 4,
   upgrades: [],
+  shanties: [],
   notes: ''
 };
 

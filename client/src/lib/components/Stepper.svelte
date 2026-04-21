@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * Integer stepper. No container border, no dividers — the +/- glyphs are
-   * the entire visual language. Arrow keys also adjust when focus is on a
-   * button. Set `fastStep` to add outer ±N buttons (used for silver and
+   * Integer stepper. Border-free ink-stamped style:
+   * the +/- are bold glyphs; the number sits in a rough box.
+   * Arrow keys also adjust when focus is on a button.
+   * Set `fastStep` to add outer ±N buttons (used for silver and
    * doubloons where ±1 is tedious).
    */
   type Props = {
@@ -15,6 +16,8 @@
     onChange: (next: number) => void;
     disabled?: boolean;
     compact?: boolean;
+    hideValue?: boolean;
+    format?: (n: number) => string;
   };
 
   let {
@@ -26,7 +29,9 @@
     label,
     onChange,
     disabled = false,
-    compact = false
+    compact = false,
+    hideValue = false,
+    format
   }: Props = $props();
 
   function bump(delta: number) {
@@ -72,7 +77,9 @@
     onkeydown={onButtonKey}
     disabled={disabled || value <= min}
   >−</button>
-  <span class="stepper-value stat" aria-live="polite">{value}</span>
+  {#if !hideValue}
+    <span class="stepper-value stat" aria-live="polite">{format ? format(value) : value}</span>
+  {/if}
   <button
     type="button"
     class="step-btn"
@@ -98,6 +105,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--s-1);
+    /* Prevent the stepper from being crushed in flex containers */
+    flex-shrink: 0;
   }
   .step-btn {
     width: var(--tap-min);
@@ -112,9 +121,12 @@
     padding: 0;
     cursor: pointer;
     border-radius: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 60ms linear;
   }
   .step-btn:hover:not([disabled]) {
-    background: var(--bg-dim);
     color: var(--fg);
   }
   .step-btn:focus-visible {
@@ -123,7 +135,7 @@
     color: var(--fg);
   }
   .step-btn[disabled] {
-    opacity: 0.3;
+    opacity: 0.2;
     cursor: not-allowed;
   }
   .step-btn.fast {
@@ -134,15 +146,22 @@
     color: var(--fg-mute);
   }
   .stepper-value {
-    min-width: 2.5ch;
-    padding: 0 var(--s-2);
+    min-width: 2.75ch;
+    padding: var(--s-1) var(--s-2);
     font-family: var(--font-mono);
     font-size: 1.5rem;
     line-height: 1;
     text-align: center;
     color: var(--fg);
+    border: 0;
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .stepper.compact .step-btn { width: 40px; min-width: 40px; min-height: 40px; font-size: 1.25rem; }
-  .stepper.compact .step-btn.fast { font-size: 0.72rem; padding: 0 var(--s-2); }
-  .stepper.compact .stepper-value { font-size: 1.15rem; padding: 0 var(--s-2); min-width: 2.5ch; }
+  .stepper.compact { gap: 2px; }
+  .stepper.compact .step-btn { width: 36px; min-width: 36px; min-height: 36px; font-size: 1.25rem; }
+  .stepper.compact .step-btn.fast { font-size: 0.7rem; padding: 0 var(--s-1); }
+  .stepper.compact .stepper-value { font-size: 1.25rem; padding: 0 var(--s-1); min-width: 2.25ch; min-height: 36px; }
 </style>
